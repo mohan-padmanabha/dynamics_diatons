@@ -137,7 +137,7 @@ void md_advance()
   double obx12,oby12,obz12;
   double do_x, do_y, do_z;
   double qsq, invq;
-  double mu, m, a, aspr, rho;
+  double mu, m, a, aspr, rhop;
   double v12x, v12y, v12z;
   double v12xp, v12yp, v12zp;
 
@@ -171,28 +171,30 @@ void md_advance()
     (tracer+ipart)->q[2] = q2;
     (tracer+ipart)->q[3] = q3;
     
-    A[0][0] = q0*q0 + q1*q1 - q2*q2 - q3*q3;
+    A[0][0] = 1-2(q2*q2+q3*q3);
     A[0][1] = 2*(q1*q2+q0*q3);
     A[0][2] = 2*(q1*q3-q0*q2);
     
     A[1][0] = 2*(q1*q2-q0*q3);
-    A[1][1] = q0*q0 - q1*q1 + q2*q2 - q3*q3;
+    A[1][1] = 1-2(q1*q1+q3*q3);
     A[1][2] = 2*(q2*q3+q0*q1);
     
     A[2][0] = 2*(q1*q3+q0*q2);
     A[2][1] = 2*(q2*q3-q0*q1);
-    A[2][2] = q0*q0 - q1*q1 - q2*q2 + q3*q3;
+    A[2][2] = 1-2(q1*q1+q2*q2);
      
 
-
+ // aspect ratio is major axis / minor axis
     aspr = b/a ;
-    mp = 4/3*pi*pow(a,3)*aspr*rho_p ;
 
-    K_xx = (16(pow(aspr,2) - 1))/((2*pow(aspr,2)-3) ln(aspr + sqrt(pow(aspr,2)-1)/(sqrt(pow(aspr,2) - 1))+ aspr);
+// mp is the mass of the particle (zhang et al 2001)
+    mp = 4/3*pi*pow(a,3)*aspr*rhop ;
+
+    K_xx = (16(pow(aspr,2) - 1))/(((2*pow(aspr,2)-3)*log(aspr + sqrt(pow(aspr,2)-1))/(sqrt(pow(aspr,2) - 1)))+ aspr);
 
     K_yy = K_xx;
 
-    K_zz = (8(pow(aspr,2) - 1))/((2*pow(aspr,2)-1) ln(aspr + sqrt(pow(aspr,2)-1)/(sqrt(pow(aspr,2) - 1))- aspr);
+    K_zz = (8(pow(aspr,2) - 1))/(((2*pow(aspr,2)-1)*log(aspr + sqrt(pow(aspr,2)-1))/(sqrt(pow(aspr,2) - 1)))-aspr);
 
 
 
@@ -203,11 +205,11 @@ void md_advance()
 
     K_tranz = (A[2][0] * K_zz)* A[2][0]+ ( A[2][1] * K_zz)* A[2][1]+(A[2][2] * K_zz)* A[2][2];
 
-/* hydrodynamic drag force (brenner 1964) */
+/* hydrodynamic drag force (brenner 1964 && zhang et al 2001) */
 
-    fx = mu K_tranx * (ux - vx);
-    fy = mu K_trany * (uy - vy);
-    fz = mu K_tranz * (uz - vz);   
+    fx = mu*pi*a*K_tranx * (ux - vx);
+    fy = mu*pi*a*K_trany * (uy - vy);
+    fz = mu*pi*a*K_tranz * (uz - vz);   
 
     /* Here compute v particle at time n-1/2 */
     v12x =  0.5 * ((tracer+ipart)->vx + (tracer+ipart)->vx0);
