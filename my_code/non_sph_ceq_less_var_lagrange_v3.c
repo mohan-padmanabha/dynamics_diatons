@@ -208,15 +208,14 @@ void md_advance()
 
 /* hydrodynamic drag force (brenner 1964 && zhang et al 2001) */
 
-    fx = mu*pi*a*K_tranx * (ux - (tracer+ipart)->vx);
-    fy = mu*pi*a*K_trany * (uy - (tracer+ipart)->vy);
-    fz = mu*pi*a*K_tranz * (uz - (tracer+ipart)->vz);   
+    fx = mu*K_tranx * (ux - (tracer+ipart)->vx);
+    fy = mu*K_trany * (uy - (tracer+ipart)->vy);
+    fz = mu*K_tranz * (uz - (tracer+ipart)->vz);   
 
     /* Here compute v particle at time n-1/2 */
     v12x =  0.5 * ((tracer+ipart)->vx + (tracer+ipart)->vx0);
     v12y =  0.5 * ((tracer+ipart)->vy + (tracer+ipart)->vy0);
     v12z =  0.5 * ((tracer+ipart)->vz + (tracer+ipart)->vz0);
-
 
     /* here we assign the present time value to previous variable */
     (tracer+ipart)->vx0 = (tracer+ipart)->vx;
