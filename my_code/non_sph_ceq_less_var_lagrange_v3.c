@@ -187,17 +187,17 @@ void md_advance()
  // aspect ratio is major axis / minor axis
  // already present in the code 
 //    (tracer+ipart)->aspect_ratio = b/a ;
-  aspr = (tracer+ipart)->aspect_ratio  
+  aspr = (tracer+ipart)->aspect_ratio ; 
 // mp is the mass of the particle (zhang et al 2001)
     mp = 4/3*pi*pow(a,3)*aspr*rhop ;
 
-    K_xx = (16(pow(aspr,2) - 1))/(((2*pow(aspr,2)-3)*log(aspr + sqrt(pow(aspr,2)-1))/(sqrt(pow(aspr,2) - 1)))+ aspr);
+    K_xx = (16*pi*a*pow((aspr*aspr - 1),3/2))/((2*aspr*aspr - 3)*log(aspr+pow((aspr*aspr-1),1/2)) + aspr*pow((aspr*aspr-1),1/2));
 
     K_yy = K_xx;
 
-    K_zz = (8(pow(aspr,2) - 1))/(((2*pow(aspr,2)-1)*log(aspr + sqrt(pow(aspr,2)-1))/(sqrt(pow(aspr,2) - 1)))-aspr);
+    K_zz = (8*pi*a*pow((aspr*aspr - 1),3/2))/((2*aspr*aspr - 1)*log(aspr+pow((aspr*aspr-1),1/2)) + aspr*pow((aspr*aspr-1),1/2));
 
-
+      ((2*aspr*aspr - 1)*log(aspr+pow((aspr*aspr-1),1/2)) + aspr*pow((aspr*aspr-1),1/2))
 
 /* translation dyadic or resistance tensor */
     K_tranx = (A[0][0] * K_xx)* A[0][0]+ (A[0][1] * K_xx)* A[0][1]+(A[0][2] * K_xx)* A[0][2];
