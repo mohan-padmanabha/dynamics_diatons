@@ -1,1 +1,1 @@
-# dynamics_diatons
+# dynamics_diatoms
