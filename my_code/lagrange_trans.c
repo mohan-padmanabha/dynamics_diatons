@@ -18,6 +18,9 @@
     (tracer+ipart)->q[2] = q2;
     (tracer+ipart)->q[3] = q3;
     
+
+
+
     matQ[0][0] = 1-2(q2*q2+q3*q3);  matQ[1][0] = 2*(q1*q2-q0*q3);   matQ[2][0] = 2*(q1*q3+q0*q2); 
     matQ[0][1] = 2*(q1*q2+q0*q3);   matQ[1][1] = 1-2(q1*q1+q3*q3);  matQ[2][1] = 2*(q2*q3-q0*q1);
     matQ[0][2] = 2*(q1*q3-q0*q2);   matQ[1][2] = 2*(q2*q3+q0*q1);   matQ[2][2] = 1-2(q1*q1+q2*q2);  
@@ -37,20 +40,47 @@
 
     K_zz = (8*pi*a*pow((aspr*aspr - 1),3/2))/((2*aspr*aspr - 1)*log(aspr+pow((aspr*aspr-1),1/2)) + aspr*pow((aspr*aspr-1),1/2));
 
-      ((2*aspr*aspr - 1)*log(aspr+pow((aspr*aspr-1),1/2)) + aspr*pow((aspr*aspr-1),1/2))
+
+matK[0][0]= kxx;
+matK[1][1]= kyy;
+matK[2][2]= kzz;
+
 
 /* translation dyadic or resistance tensor */
-    K_tranx = (matQ[0][0] * K_xx)* matQ[0][0]+ (matQ[0][1] * K_xx)* matQ[0][1]+(matQ[0][2] * K_xx)* matQ[0][2];
 
-    K_trany = (matQ[1][0] * K_yy )* matQ[1][0]+ ( matQ[1][1] * K_yy)* matQ[1][1]+(matQ[1][2] * K_yy)* matQ[1][2];
+          /* For transformation of co-ordinates from Lab frome to body frame */
+          /* general form  */
+               for (k=1; k<3; k++){
+                     p = 0;
+                 for (j=0; j<3; j++){
+                     r = 0;
+                   for (i=0; i<3; i++){
+                     r += matQ[j][i]*matK[i][j];
+                    }
+                     matKT[k][j] += r * matA[k][j];
+                      }
+                         }
 
-    K_tranz = (matQ[2][0] * K_zz)* matQ[2][0]+ ( matQ[2][1] * K_zz)* matQ[2][1]+(matQ[2][2] * K_zz)* matQ[2][2];
+
+
+
+//    K_tranx = (matQ[0][0] * K_xx)* matQ[0][0]+ (matQ[0][1] * K_xx)* matQ[0][1]+(matQ[0][2] * K_xx)* matQ[0][2];
+
+//    K_trany = (matQ[1][0] * K_yy )* matQ[1][0]+ ( matQ[1][1] * K_yy)* matQ[1][1]+(matQ[1][2] * K_yy)* matQ[1][2];
+
+//    K_tranz = (matQ[2][0] * K_zz)* matQ[2][0]+ ( matQ[2][1] * K_zz)* matQ[2][1]+(matQ[2][2] * K_zz)* matQ[2][2];
 
 /* hydrodynamic drag force (brenner 1964 && zhang et al 2001) */
 
-    fx = mu*K_tranx * ((tracer+ipart)->ux - (tracer+ipart)->vx);
-    fy = mu*K_trany * ((tracer+ipart)->uy - (tracer+ipart)->vy);
-    fz = mu*K_tranz * ((tracer+ipart)->uz - (tracer+ipart)->vz);   
+//    fx = mu*K_tranx * ((tracer+ipart)->ux - (tracer+ipart)->vx);
+//    fy = mu*K_trany * ((tracer+ipart)->uy - (tracer+ipart)->vy);
+//    fz = mu*K_tranz * ((tracer+ipart)->uz - (tracer+ipart)->vz);   
+
+    fx = mu* matKT[0][0] * ((tracer+ipart)->ux - (tracer+ipart)->vx);
+    fy = mu* matKT[1][1] * ((tracer+ipart)->uy - (tracer+ipart)->vy);
+    fz = mu* matKT[2][2] * ((tracer+ipart)->uz - (tracer+ipart)->vz); 
+
+
 
     /* Here compute v particle at time n-1/2 */
     v12x =  0.5 * ((tracer+ipart)->vx + (tracer+ipart)->vx0);
