@@ -24,7 +24,7 @@
                    for (i=0; i<3; i++){
                      r += matA[j][i]*matD[i][j];
                     }
-                     matR[k][j] += r * matA[k][j];
+                     matDT[k][j] += r * matA[k][j];
                       }
                          }
 
@@ -35,7 +35,7 @@
 
 	      for (i=0; i<3; i++)
                 for (j=0; j<3; j++){
-                  matS[i][j] = 0.5*(matA[i][j]+matA[j][i]);
+                  matS[i][j] = 0.5*(matDT[i][j]+matDT[j][i]);
 		}
 
 	      /* Compute Wij */
@@ -43,13 +43,9 @@
 
 	      for (i=0; i<3; i++)
                 for (j=0; j<3; j++){
-                  matW[i][j] = 0.5*(matA[i][j]-matA[j][i]);
+                  matW[i][j] = 0.5*(matDT[i][j]-matDT[j][i]);
 		}
 
-
-
-
-   
 
     alfa = ((aspr*aspr)/((aspr*aspr) - 1)) + aspr/(2*pow((aspr*aspr)-1),3/2))* ln ((aspr - sqrt((aspr*aspr) - 1))/(aspr + sqrt((aspr*aspr)-1)));
     beta = alfa ;
@@ -61,7 +57,7 @@
 
     T_y = (16*pi*mu*pow(a,3)*aspr)/(3*((aspr*aspr)*gama + alfa))*(((aspr*aspr) - 1) * S_xz + ((aspr*aspr)+1) * (W_xz - W_y)) ;
 
-    T_z = (32*pi*mu*pow(a,3)*aspr)/(3*(alfa + gama))*(W_yx-W_z) ;
+    T_z = (32*pi*mu*pow(a,3)*aspr)/(3*(alfa + gama))*(W_yx - W_z) ;
     
 
     /* compute angular velocity */
