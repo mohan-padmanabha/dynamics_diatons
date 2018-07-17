@@ -12,6 +12,34 @@
           my_double qsq, invq, p, r;
           int i, j, k;
 
+   /* assigning the value to local variable for multiple use */
+    q0 =  (tracer+ipart)->q[0];
+    q1 =  (tracer+ipart)->q[1];
+    q2 =  (tracer+ipart)->q[2];
+    q3 =  (tracer+ipart)->q[3];
+
+    /* Rotation matrix of quaternions to transform  to body frame */
+
+    A[0][0] = q0*q0 + q1*q1 - q2*q2 - q3*q3;
+    A[0][1] = 2*(q1*q2+q0*q3);
+    A[0][2] = 2*(q1*q3-q0*q2);
+    
+    A[1][0] = 2*(q1*q2-q0*q3);
+    A[1][1] = q0*q0 - q1*q1 + q2*q2 - q3*q3;
+    A[1][2] = 2*(q2*q3+q0*q1);
+    
+    A[2][0] = 2*(q1*q3+q0*q2);
+    A[2][1] = 2*(q2*q3-q0*q1);
+    A[2][2] = q0*q0 - q1*q1 - q2*q2 + q3*q3;
+
+
+    /* multiplication matrix of quaternions to advance in time */
+    B[0][0] =  q0;    B[0][1] = -q1;    B[0][2] = -q2;    B[0][3] = -q3;    
+    B[1][0] =  q1;    B[1][1] =  q0;    B[1][2] = -q3;    B[1][3] =  q2;
+    B[2][0] =  q2;    B[2][1] =  q3;    B[2][2] =  q0;    B[2][3] = -q1;
+    B[3][0] =  q3;    B[3][1] = -q2;    B[3][2] =  q1;    B[3][3] =  q0;
+
+
 
               /* moment of inertia (diagnal in body frame)*/
               I_xx = ((1+(aspr*aspr))*(a*a)*mp)/(5) ;
@@ -96,32 +124,7 @@
     (tracer+ipart)->oz = o12z + (do_z * (property.time_dt*0.5));   
 
 
-   /* assigning the value to local variable for multiple use */
-    q0 =  (tracer+ipart)->q[0];
-    q1 =  (tracer+ipart)->q[1];
-    q2 =  (tracer+ipart)->q[2];
-    q3 =  (tracer+ipart)->q[3];
 
-    /* Rotation matrix of quaternions to transform  to body frame */
-
-    A[0][0] = q0*q0 + q1*q1 - q2*q2 - q3*q3;
-    A[0][1] = 2*(q1*q2+q0*q3);
-    A[0][2] = 2*(q1*q3-q0*q2);
-    
-    A[1][0] = 2*(q1*q2-q0*q3);
-    A[1][1] = q0*q0 - q1*q1 + q2*q2 - q3*q3;
-    A[1][2] = 2*(q2*q3+q0*q1);
-    
-    A[2][0] = 2*(q1*q3+q0*q2);
-    A[2][1] = 2*(q2*q3-q0*q1);
-    A[2][2] = q0*q0 - q1*q1 - q2*q2 + q3*q3;
-
-
-    /* multiplication matrix of quaternions to advance in time */
-    B[0][0] =  q0;    B[0][1] = -q1;    B[0][2] = -q2;    B[0][3] = -q3;    
-    B[1][0] =  q1;    B[1][1] =  q0;    B[1][2] = -q3;    B[1][3] =  q2;
-    B[2][0] =  q2;    B[2][1] =  q3;    B[2][2] =  q0;    B[2][3] = -q1;
-    B[3][0] =  q3;    B[3][1] = -q2;    B[3][2] =  q1;    B[3][3] =  q0;
 
 
     /* transformation: From angular momentum in the lab frame to body frame */
