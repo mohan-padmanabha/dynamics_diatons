@@ -76,9 +76,9 @@ matK[2][2]= kzz;
 //    fy = mu*K_trany * ((tracer+ipart)->uy - (tracer+ipart)->vy);
 //    fz = mu*K_tranz * ((tracer+ipart)->uz - (tracer+ipart)->vz);   
 
-    fx = mu* matKT[0][0] * ((tracer+ipart)->ux - (tracer+ipart)->vx);
-    fy = mu* matKT[1][1] * ((tracer+ipart)->uy - (tracer+ipart)->vy);
-    fz = mu* matKT[2][2] * ((tracer+ipart)->uz - (tracer+ipart)->vz); 
+    fx = property.nu * matKT[0][0] * ((tracer+ipart)->ux - (tracer+ipart)->vx);
+    fy = property.nu * matKT[1][1] * ((tracer+ipart)->uy - (tracer+ipart)->vy);
+    fz = property.nu * matKT[2][2] * ((tracer+ipart)->uz - (tracer+ipart)->vz); 
 
 
 
