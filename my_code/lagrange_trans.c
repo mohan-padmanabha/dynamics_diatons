@@ -1,26 +1,43 @@
 
 
-    my_double pi;
     my_double q0, q1, q2, q3;
     my_double matQ[2][2];
-    my_double aspr, mp, a, rhop, mu;
+    my_double aspr, mp, a, rhop, mu, pi;
     my_double k_xx, k_yy, k_zz;
     my_double k_tranx, k_trany, k_tranz;
     my_double fx, fy, fz;
     my_double v12x, v12y, v12z;
 
-
-
     pi = 3.1415;
     
-    (tracer+ipart)->q[0] = q0;
-    (tracer+ipart)->q[1] = q1;
-    (tracer+ipart)->q[2] = q2;
-    (tracer+ipart)->q[3] = q3;
     
 
 
 
+    /* assigning to the local variable */
+    q0 = (tracer+ipart)->q[0];
+    q1 = (tracer+ipart)->q[1];
+    q2 = (tracer+ipart)->q[2];
+    q3 = (tracer+ipart)->q[3];
+
+
+
+
+
+/* to initilize the values of the quaternions */
+
+
+      quaternion euler2quaternion(euler e)
+      {
+        quaternion q;
+        q.q[0] = cos(0.5*e.theta)*cos(0.5*(e.phi+e.psi));
+        q.q[1] = sin(0.5*e.theta)*cos(0.5*(e.phi-e.psi));
+        q.q[2] = sin(0.5*e.theta)*sin(0.5*(e.phi-e.psi));
+        q.q[3] = cos(0.5*e.theta)*sin(0.5*(e.phi+e.psi));
+        return q;
+      }
+
+     /* rotation matrix of quaternions */
     matQ[0][0] = 1-2(q2*q2+q3*q3);  matQ[1][0] = 2*(q1*q2-q0*q3);   matQ[2][0] = 2*(q1*q3+q0*q2); 
     matQ[0][1] = 2*(q1*q2+q0*q3);   matQ[1][1] = 1-2(q1*q1+q3*q3);  matQ[2][1] = 2*(q2*q3-q0*q1);
     matQ[0][2] = 2*(q1*q3-q0*q2);   matQ[1][2] = 2*(q2*q3+q0*q1);   matQ[2][2] = 1-2(q1*q1+q2*q2);  
@@ -60,9 +77,9 @@ matK[2][2]= kzz;
                      matKT[k][j] += r * matA[k][j];
                       }
                          }
-
-
-
+                       
+            
+                       
 
 //    K_tranx = (matQ[0][0] * K_xx)* matQ[0][0]+ (matQ[0][1] * K_xx)* matQ[0][1]+(matQ[0][2] * K_xx)* matQ[0][2];
 
