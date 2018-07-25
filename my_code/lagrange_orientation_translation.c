@@ -1,53 +1,78 @@
-
+  #ifdef LAGRANGE_ORIENTATION_TRANSLATION
       /* translation */
     my_double q0, q1, q2, q3;
-    my_double matR[3][3];
+    my_double matR[3][3], matK[3][3], matKT[3][3];
     my_double aspr, mp, a, rhop, mu, pi;
     my_double k_tranx, k_trany, k_tranz;
     my_double fx, fy, fz;
     my_double v12x, v12y, v12z;
-    
+
+
+ #endif   
 
 
 /* orinetation */
     my_double I_xx, I_yy, I_zz;
-    my_double q0, q1, q2, q3;
-    my_double matD[3][3], matA[3][3], matS[3][3], matDT[3][3], matW[3][3], matB[3][3] ;
-    my_double alpha, beta, gamma;
+    my_double matD[3][3], matSB[3][3], matDT[3][3], matWB[3][3], B[4][4] ;
+    my_double alpha0, beta0, gamma0, theta;
     my_double T_x, T_y, T_z;
     my_double do_x, do_y, do_z;
     my_double o12x, o12y, o12z;
     my_double obx, oby, obz;
     my_double dq0dt, dq1dt, dq2dt, dq3dt;
     my_double qsq, invq, p, r;
-    int i, j, k;
+    int l, m, k;
+ #endif
+
+  #ifdef LAGRANGE_ORIENTATION_TRANSLATION
+  my_double qt0, qt1, qt2, qt3;
+  my_double ox,oy,oz;
+  my_double ox_old,oy_old,oz_old;
+  #endif
+
+/* initial conditions */
+#ifdef LAGRANGE_ORIENTATION
+/*
+(tracer+i)->px = 0.0;
+(tracer+i)->py = 1.0;
+(tracer+i)->pz = 0.0;
+*/
+/* uniform random oriented vector */
+/*
+theta = acos(2.0*myrand()-1.0);
+phi = two_pi*myrand();
+(tracer+i)->px = sin(theta)*sin(phi);
+(tracer+i)->py = sin(theta)*cos(phi);
+(tracer+i)->pz = cos(theta);
+
+ vec = random_vector();
+*/
+
+
+  #ifdef LAGRANGE_ORIENTATION_TRANSLATION
 
    pi = 3.1415;
+   theta = 0. ;
+
+/* conversion from axis angles to quaternions */
+(tracer+ipart)->qt1 = (tracer+ipart)->px * sin(theta/2);
+(tracer+ipart)->qt2 = (tracer+ipart)->py * sin(theta/2);
+(tracer+ipart)->qt3 = (tracer+ipart)->pz * sin(theta/2);
+(tracer+ipart)->qt0 = cos(theta/2);
+
+
+
     /* assigning to the local variable */
-    q0 = (tracer+ipart)->q[0];
-    q1 = (tracer+ipart)->q[1];
-    q2 = (tracer+ipart)->q[2];
-    q3 = (tracer+ipart)->q[3];
-
-
-/* to initilize the values of the quaternions */
-
-
-      quaternion euler2quaternion(euler e)
-      {
-        quaternion q;
-        q.q[0] = cos(0.5*e.theta)*cos(0.5*(e.phi+e.psi));
-        q.q[1] = sin(0.5*e.theta)*cos(0.5*(e.phi-e.psi));
-        q.q[2] = sin(0.5*e.theta)*sin(0.5*(e.phi-e.psi));
-        q.q[3] = cos(0.5*e.theta)*sin(0.5*(e.phi+e.psi));
-        return q;
-      }
+    q0 = (tracer+ipart)->qt0;
+    q1 = (tracer+ipart)->qt1;
+    q2 = (tracer+ipart)->qt2;
+    q3 = (tracer+ipart)->qt3;
 
 
      /* rotation matrix of quaternions */
-    matR[0][0] = 1-2(q2*q2+q3*q3);  matR[1][0] = 2*(q1*q2-q0*q3);   matR[2][0] = 2*(q1*q3+q0*q2); 
-    matR[0][1] = 2*(q1*q2+q0*q3);   matR[1][1] = 1-2(q1*q1+q3*q3);  matR[2][1] = 2*(q2*q3-q0*q1);
-    matR[0][2] = 2*(q1*q3-q0*q2);   matR[1][2] = 2*(q2*q3+q0*q1);   matR[2][2] = 1-2(q1*q1+q2*q2);  
+    matR[0][0] = 1-2*(q2*q2+q3*q3);  matR[1][0] = 2*(q1*q2-q0*q3);   matR[2][0] = 2*(q1*q3+q0*q2); 
+    matR[0][1] = 2*(q1*q2+q0*q3);   matR[1][1] = 1-2*(q1*q1+q3*q3);  matR[2][1] = 2*(q2*q3-q0*q1);
+    matR[0][2] = 2*(q1*q3-q0*q2);   matR[1][2] = 2*(q2*q3+q0*q1);   matR[2][2] = 1-2*(q1*q1+q2*q2);  
  
      
 
@@ -70,14 +95,14 @@
 
           /* For transformation of co-ordinates from Lab frome to body frame */
           /* general form  */
-               for (k=1; k<3; k++){
+               for (m=1; m<3; m++){
                      p = 0;
-                 for (j=0; j<3; j++){
+                 for (l=0; l<3; l++){
                      r = 0;
-                   for (i=0; i<3; i++){
-                     r += matR[j][i]*matK[i][j];
+                   for (k=0; k<3; k++){
+                     r += matR[l][k]*matK[k][l];
                     }
-                     matKT[k][j] += r * matA[k][j];
+                     matKT[m][l] += r * matR[m][l];
                       }
                          }
                        
@@ -92,14 +117,14 @@
 
 
     /* Here compute v particle at time n-1/2 */
-    v12x =  0.5 * ((tracer+ipart)->vx + (tracer+ipart)->vx0);
-    v12y =  0.5 * ((tracer+ipart)->vy + (tracer+ipart)->vy0);
-    v12z =  0.5 * ((tracer+ipart)->vz + (tracer+ipart)->vz0);
+    v12x =  0.5 * ((tracer+ipart)->vx + (tracer+ipart)->vx_old);
+    v12y =  0.5 * ((tracer+ipart)->vy + (tracer+ipart)->vy_old);
+    v12z =  0.5 * ((tracer+ipart)->vz + (tracer+ipart)->vz_old);
 
     /* here we assign the present time value to previous variable */
-    (tracer+ipart)->vx0 = (tracer+ipart)->vx;
-    (tracer+ipart)->vy0 = (tracer+ipart)->vy;
-    (tracer+ipart)->vz0 = (tracer+ipart)->vz;
+    (tracer+ipart)->vx_old = (tracer+ipart)->vx;
+    (tracer+ipart)->vy_old = (tracer+ipart)->vy;
+    (tracer+ipart)->vz_old = (tracer+ipart)->vz;
 
     /* Here compute v particle at time n+1/2 */
 
@@ -142,48 +167,48 @@
     matD[2][0]=(tracer+ipart)->dx_uz ; matD[2][1]=(tracer+ipart)->dy_uz; matD[2][2]=(tracer+ipart)->dz_uz;	 
 
     /* For transformation of co-ordinates from Lab frome to body frame for tensor */
-    for (k=1; k<3; k++){
-          p = 0;
-           for (j=0; j<3; j++){
+
+      for (m=1; m<3; m++){
+           p = 0;
+           for (l=0; l<3; l++){
                r = 0;
-              for (i=0; i<3; i++){
-                   r += matA[j][i]*matD[i][j];
-                   }
-              matDT[k][j] += r * matA[k][j];
-              }
-         }
-      
+               for (k=0; k<3; k++){
+                   r += matR[l][k]*matD[k][l];
+               }
+               matDT[m][l] += r * matR[m][l];
+            }
+       }
 
      /* Compute Sij for body frame*/
     /*make simmetric*/
 
-	for (i=0; i<3; i++)
-            for (j=0; j<3; j++){
-                matS[i][j] = 0.5*(matDT[i][j]+matDT[j][i]);
+	for (k=0; k<3; k++)
+            for (l=0; l<3; l++){
+                matSB[k][l] = 0.5*(matDT[k][l]+matDT[l][k]);
                }
 
     /* Compute Wij for body frame*/
     /*make simmetric*/
 
-      for (i=0; i<3; i++)
-          for (j=0; j<3; j++){
-             matW[i][j] = 0.5*(matDT[i][j]-matDT[j][i]);
-	   }
 
-    /* computation of constants alpha beta and gamma to compute torque */
+	for (k=0; k<3; k++)
+            for (l=0; l<3; l++){
+                matWB[k][l] = 0.5*(matDT[k][l]+matDT[l][k]);
+               }
 
-    alpha = ((aspr*aspr)/((aspr*aspr) - 1)) + aspr/(2*pow((aspr*aspr)-1),3/2))* ln ((aspr - sqrt((aspr*aspr) - 1))/(aspr + sqrt((aspr*aspr)-1)));
-    beta = alpha ;
-    gamma = - (2/((aspr*aspr) - 1)) - aspr/(pow((aspr*aspr)-1),3/2))* ln ((aspr - sqrt((aspr*aspr) - 1))/(aspr + sqrt((aspr*aspr)-1))) ;
+    /* computation of constants alpha0 beta0 and gamma0 to compute torque */
 
+    alpha0 = ((aspr*aspr)/((aspr*aspr) - 1)) + aspr/(2*pow(((aspr*aspr)-1),3/2)* log((aspr - sqrt((aspr*aspr) - 1))/(aspr + sqrt((aspr*aspr)-1))));
+    beta0 = alpha0 ;
+    gamma0 = - (2/((aspr*aspr) - 1)) - aspr/(pow(((aspr*aspr)-1),3/2)* log((aspr - sqrt((aspr*aspr) - 1))/(aspr + sqrt((aspr*aspr)-1))));
 
     /* computation of torque using the values computed */
 
-    T_x = (16*pi*property.nu*pow(a,3)*aspr)/(3*(beta + (aspr*aspr)*gamma)) * ((1-(aspr*aspr)) * matS[2][1] + (1+ (aspr*aspr)) * ( matW[1][2] - (tracer+ipart)->ox)) ;
+    T_x = (16*pi*property.nu*pow(a,3)*aspr)/(3*(beta0 + (aspr*aspr)*gamma0)) * ((1-(aspr*aspr)) * matSB[2][1] + (1+ (aspr*aspr)) * ( matWB[1][2] - (tracer+ipart)->ox)) ;
 
-    T_y = (16*pi*property.nu*pow(a,3)*aspr)/(3*((aspr*aspr)*gamma + alpha))*(((aspr*aspr) - 1) * matS[0][2] + ((aspr*aspr)+1) * ( matW[0][2] - (tracer+ipart)->oy)) ;
+    T_y = (16*pi*property.nu*pow(a,3)*aspr)/(3*((aspr*aspr)*gamma0 + alpha0))*(((aspr*aspr) - 1) * matSB[0][2] + ((aspr*aspr)+1) * ( matWB[0][2] - (tracer+ipart)->oy)) ;
 
-    T_z = (32*pi*property.nu*pow(a,3)*aspr)/(3*(alpha + gamma))*( matW[1][0] - (tracer+ipart)->oz) ;
+    T_z = (32*pi*property.nu*pow(a,3)*aspr)/(3*(alpha0 + gamma0))*( matWB[1][0] - (tracer+ipart)->oz) ;
     
 
     /* compute angular velocity */
@@ -199,15 +224,15 @@
 
 
     /* taking average to determine the middle value */
-    o12x = 0.5((tracer+ipart)->ox0+(tracer+ipart)->ox);
-    o12y = 0.5((tracer+ipart)->oy0+(tracer+ipart)->oy);
-    o12z = 0.5((tracer+ipart)->oz0+(tracer+ipart)->oz);
+    o12x = 0.5*((tracer+ipart)->ox_old+(tracer+ipart)->ox);
+    o12y = 0.5*((tracer+ipart)->oy_old+(tracer+ipart)->oy);
+    o12z = 0.5*((tracer+ipart)->oz_old+(tracer+ipart)->oz);
 
 
    /*assigning the old values*/
-    (tracer+ipart)->ox0=(tracer+ipart)->ox;
-    (tracer+ipart)->oy0=(tracer+ipart)->oy;
-    (tracer+ipart)->oz0=(tracer+ipart)->oz;
+    (tracer+ipart)->ox_old=(tracer+ipart)->ox;
+    (tracer+ipart)->oy_old=(tracer+ipart)->oy;
+    (tracer+ipart)->oz_old=(tracer+ipart)->oz;
 
     /* estimating the value of omega at time t */
     (tracer+ipart)->ox = o12x + (do_x * (property.time_dt*0.5));
@@ -215,9 +240,9 @@
     (tracer+ipart)->oz = o12z + (do_z * (property.time_dt*0.5));   
 
     /* transformation: From angular momentum in the lab frame to body frame */
-    obx = A[0][0] *(tracer+ipart)->ox + A[0][1] *(tracer+ipart)->oy + A[0][2] *(tracer+ipart)->oz;
-    oby = A[1][0] *(tracer+ipart)->ox + A[1][1] *(tracer+ipart)->oy + A[1][2] *(tracer+ipart)->oz;
-    obz = A[2][0] *(tracer+ipart)->ox + A[2][1] *(tracer+ipart)->oy + A[2][2] *(tracer+ipart)->oz;
+    obx = matR[0][0] *(tracer+ipart)->ox + matR[0][1] *(tracer+ipart)->oy + matR[0][2] *(tracer+ipart)->oz;
+    oby = matR[1][0] *(tracer+ipart)->ox + matR[1][1] *(tracer+ipart)->oy + matR[1][2] *(tracer+ipart)->oz;
+    obz = matR[2][0] *(tracer+ipart)->ox + matR[2][1] *(tracer+ipart)->oy + matR[2][2] *(tracer+ipart)->oz;
 
    /* Now compute dq/dt = 0.5* B*(0,obx,oby,obz) , this is just a guess of dq/dt(t) */
     dq0dt = 0.5 *  (B[0][1] * obx + B[0][2] * oby + B[0][3] * obz );
@@ -250,18 +275,10 @@
     (tracer+ipart)->oz = o12z + do_z *property.time_dt;
 
 
-/* Rotation matrix of quaternions to transform  to body frame */
-    A[0][0] = q0*q0 + q1*q1 - q2*q2 - q3*q3;
-    A[0][1] = 2*(q1*q2+q0*q3);
-    A[0][2] = 2*(q1*q3-q0*q2);
-    
-    A[1][0] = 2*(q1*q2-q0*q3);
-    A[1][1] = q0*q0 - q1*q1 + q2*q2 - q3*q3;
-    A[1][2] = 2*(q2*q3+q0*q1);
-    
-    A[2][0] = 2*(q1*q3+q0*q2);
-    A[2][1] = 2*(q2*q3-q0*q1);
-    A[2][2] = q0*q0 - q1*q1 - q2*q2 + q3*q3;
+     /* rotation matrix of quaternions */
+    matR[0][0] = 1-2*(q2*q2+q3*q3);  matR[1][0] = 2*(q1*q2-q0*q3);   matR[2][0] = 2*(q1*q3+q0*q2); 
+    matR[0][1] = 2*(q1*q2+q0*q3);   matR[1][1] = 1-2*(q1*q1+q3*q3);  matR[2][1] = 2*(q2*q3-q0*q1);
+    matR[0][2] = 2*(q1*q3-q0*q2);   matR[1][2] = 2*(q2*q3+q0*q1);   matR[2][2] = 1-2*(q1*q1+q2*q2);  
 
 
     /* multiplication matrix of quaternions to advance in time */
@@ -271,9 +288,9 @@
     B[3][0] =  q3;    B[3][1] = -q2;    B[3][2] =  q1;    B[3][3] =  q0;
     
     /* transformation: From angular momentum in the solid frame to angular momentum in the body frame */
-    obx = A[0][0] * (tracer+ipart)->ox + A[0][1] * (tracer+ipart)->oy + A[0][2] * (tracer+ipart)->oz;
-    oby = A[1][0] * (tracer+ipart)->ox + A[1][1] * (tracer+ipart)->oy + A[1][2] * (tracer+ipart)->oz;
-    obz = A[2][0] * (tracer+ipart)->ox + A[2][1] * (tracer+ipart)->oy + A[2][2] * (tracer+ipart)->oz;
+    obx = matR[0][0] * (tracer+ipart)->ox + matR[0][1] * (tracer+ipart)->oy + matR[0][2] * (tracer+ipart)->oz;
+    oby = matR[1][0] * (tracer+ipart)->ox + matR[1][1] * (tracer+ipart)->oy + matR[1][2] * (tracer+ipart)->oz;
+    obz = matR[2][0] * (tracer+ipart)->ox + matR[2][1] * (tracer+ipart)->oy + matR[2][2] * (tracer+ipart)->oz;
 
 
 
@@ -300,15 +317,27 @@
     q2 *= invq;
     q3 *= invq;
 
-   /* assigning the values back to variables */  
-    (tracer+ipart)->q[0] = q0;
-    (tracer+ipart)->q[1] = q1;
-    (tracer+ipart)->q[2] = q2;
-    (tracer+ipart)->q[3] = q3;
-
 /* extrapolation to predict the value of ox at time t+dt */
 
     (tracer+ipart)->ox = 0.5 * (o12x + 3*(tracer+ipart)->ox);
     (tracer+ipart)->oy = 0.5 * (o12y + 3*(tracer+ipart)->oy);
     (tracer+ipart)->oz = 0.5 * (o12z + 3*(tracer+ipart)->oz);
+
+
+/* conversion from quaternions to axis angles */
+theta = 2 * acos(q0) ;
+(tracer+ipart)->px = q1 / sqrt(1-q0*q0) ;
+(tracer+ipart)->py = q2 / sqrt(1-q0*q0) ;
+(tracer+ipart)->pz = q3 / sqrt(1-q0*q0) ;
+
+
+   /* assigning the values back to variables */  
+    (tracer+ipart)->qt0 = q0;
+    (tracer+ipart)->qt1 = q1;
+    (tracer+ipart)->qt2 = q2;
+    (tracer+ipart)->qt3 = q3;
+
+
+
+
 

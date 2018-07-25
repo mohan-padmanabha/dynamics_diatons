@@ -319,6 +319,9 @@ typedef struct {
   my_double vx_old,vy_old,vz_old;
   my_double ax,ay,az;
   my_double ax_old,ay_old,az_old;
+  my_double ox,oy,oz;
+  my_double ox_old,oy_old,oz_old;
+  my_double qt0, qt1, qt2, qt3; 
 #ifdef LB_FLUID
   my_double ux, uy , uz; /* fluid velocity */
   my_double ux_old, uy_old , uz_old; 
@@ -393,6 +396,7 @@ typedef struct {
   my_double ax,ay,az;
   my_double ax2,ay2,az2;
   my_double ax4,ay4,az4;
+  
  #ifdef LAGRANGE_GRADIENT
   #ifdef LAGRANGE_ORIENTATION
   my_double dt_px,dt_py,dt_pz;
@@ -402,6 +406,9 @@ typedef struct {
   my_double dt_nx,dt_ny,dt_nz;
   my_double dt_nx2,dt_ny2,dt_nz2;
   my_double dt_nx4,dt_ny4,dt_nz4;
+  #ifdef LAGRANGE_ORIENTATION_TRANSLATION
+  
+    #endif
    #endif
   #endif
  #endif
