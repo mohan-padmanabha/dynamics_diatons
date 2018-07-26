@@ -1,37 +1,38 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
 
 
-int main {
+int main() {
 
       /* translation */
-    my_double q0, q1, q2, q3;
-    my_double matR[3][3], matK[3][3], matKT[3][3];
-    my_double aspr, mp, a, rhop, mu, pi;
-    my_double k_tranx, k_trany, k_tranz;
-    my_double fx, fy, fz;
-    my_double v12x, v12y, v12z;
+    double q0, q1, q2, q3;
+    double matR[3][3], matK[3][3], matKT[3][3];
+    double aspr, mp, a, rhop, mu, pi;
+    double k_tranx, k_trany, k_tranz;
+    double fx, fy, fz;
+    double v12x, v12y, v12z;
 
 /* orinetation */
-    my_double I_xx, I_yy, I_zz;
-    my_double matD[3][3], matSB[3][3], matDT[3][3], matWB[3][3], B[4][4] ;
-    my_double alpha0, beta0, gamma0, theta;
-    my_double T_x, T_y, T_z;
-    my_double do_x, do_y, do_z;
-    my_double o12x, o12y, o12z;
-    my_double obx, oby, obz;
-    my_double dq0dt, dq1dt, dq2dt, dq3dt;
-    my_double qsq, invq, p, r;
-    int l, m, k;
-    my_double qt0, qt1, qt2, qt3;
-    my_double ox,oy,oz;
-    my_double ox_old,oy_old,oz_old;
+    double I_xx, I_yy, I_zz;
+    double matD[3][3], matSB[3][3], matDT[3][3], matWB[3][3], B[4][4] ;
+    double alpha0, beta0, gamma0, theta;
+    double T_x, T_y, T_z;
+    double do_x, do_y, do_z;
+    double o12x, o12y, o12z;
+    double obx, oby, obz;
+    double dq0dt, dq1dt, dq2dt, dq3dt;
+    double qsq, invq, p, r;
+    int l, m, k, i;
+    double qt0, qt1, qt2, qt3;
+    double ox,oy,oz;
+    double ox_old,oy_old,oz_old;
 
-
+    double u = 0;
 /* initial conditions */
-#ifdef LAGRANGE_ORIENTATION
+//#ifdef LAGRANGE_ORIENTATION
 /*
 (tracer+i)->px = 0.0;
 (tracer+i)->py = 1.0;
@@ -49,20 +50,41 @@ phi = two_pi*myrand();
 */
 
 
-  #ifdef LAGRANGE_ORIENTATION_TRANSLATION
+//  #ifdef LAGRANGE_ORIENTATION_TRANSLATION
 
-   pi = 3.1415;
-   theta = 0. ;
-   uz = 0;
-   du_dx = 2;
-   
+   double pi = 3.1415;
+   double theta = 0. ;
+   double aspr = 5;
+   double bx = 1;
+   double rhop = 1.1;
+   double a = aspr * bx ;
+   double ux = 0;
+   double uz = 0;
+   double uy = ux;
+   double du_dx = 1;
+   double x_max = 5;
+   double y_max = 5;
+   double itr = 1000;
+   double px = 0;
+   double py = 1;
+   double pz = 0;
 
+    double dx_ux = 0 ; double dy_ux = 1 ; double dz_ux = 0;
+    double dx_uy = 0 ; double dy_uy = 0 ; double dz_uy = 0;
+    double dx_uz = 0 ; double dy_uz = 0 ; double dz_uz = 0;
 /* conversion from axis angles to quaternions */
+
+
  q1 =  px * sin(theta/2);
  q2 =  py * sin(theta/2);
  q3 =  pz * sin(theta/2);
  q0 = cos(theta/2);
 
+
+   qdata = fopen("quat_data.txt","w");
+   vdata = fopen("vec_data.txt","w");
+
+for(i=0; i < itr ; i++){
 
      /* rotation matrix of quaternions */
     matR[0][0] = 1-2*(q2*q2+q3*q3);  matR[1][0] = 2*(q1*q2-q0*q3);   matR[2][0] = 2*(q1*q3+q0*q2); 
@@ -96,7 +118,7 @@ phi = two_pi*myrand();
                    for (k=0; k<3; k++){
                      r += matR[l][k]*matK[k][l];
                     }
-                     matKT[m][l] += r * matR[m][l];
+                     matKT[m][l] += p * matR[m][l];
                       }
                          }
                        
@@ -169,7 +191,7 @@ phi = two_pi*myrand();
                for (k=0; k<3; k++){
                    r += matR[l][k]*matD[k][l];
                }
-               matDT[m][l] += r * matR[m][l];
+               matDT[m][l] += p * matR[m][l];
             }
        }
 
@@ -325,8 +347,14 @@ theta = 2 * acos(q0) ;
  pz = q3 / sqrt(1-q0*q0) ;
 
 
-   /* assigning the values back to variables */  
+fprintf(qdata, "%d\t %d\t %d\t %d\t %d\t %d\n", q0, q1, q2, q3, x, y);
+fprintf(vdata, "%d\t %d\t %d\t %d\t %d\t %d\n", px, py, pz, theta, q3, x, y);
 
+
+}
+
+   /* assigning the values back to variables */  
+return 0;
 
 }
 
