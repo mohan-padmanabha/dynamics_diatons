@@ -621,6 +621,21 @@ phi = two_pi*myrand();
  (tracer+i)->dt_nz = 0.0;
  #endif
 
+/* -------------------------------------------------------------------------------------------------------------*/
+ #ifdef LAGRANGE_ORIENTATION_TRANSLATION
+/* initial condition to convert the orientation vector p to quaternions qt */ 
+theta = 0;
+(tracer+i)->qt1 = (tracer+i)->px * sin(theta/2);
+(tracer+i)->qt2 = (tracer+i)->py * sin(theta/2);
+(tracer+i)->qt3 = (tracer+i)->pz * sin(theta/2);
+(tracer+i)->qt0 = cos(theta/2);
+ #endif
+/*-----------------------------------------------------------------------------------------------------------------*/
+
+
+
+
+
  #ifdef LAGRANGE_ORIENTATION_ACTIVE
   #ifdef LAGRANGE_ORIENTATION_ACTIVE_JUMP
 /* time from jump is initialized in a arbitrary range between 0 and 10 jump_times */
@@ -2102,7 +2117,7 @@ void move_particles(){
     my_double o12x, o12y, o12z;
     my_double obx, oby, obz;
     my_double dq0dt, dq1dt, dq2dt, dq3dt;
-    my_double qsq, invq, p, r;
+    my_double qsq, invq, inv, r;
     int l, m, k;
  #endif
 
@@ -2372,14 +2387,11 @@ void move_particles(){
 
   #ifdef LAGRANGE_ORIENTATION_TRANSLATION
 
-   pi = 3.1415;
-   theta = 0. ;
-
 /* conversion from axis angles to quaternions */
-(tracer+ipart)->qt1 = (tracer+ipart)->px * sin(theta/2);
-(tracer+ipart)->qt2 = (tracer+ipart)->py * sin(theta/2);
-(tracer+ipart)->qt3 = (tracer+ipart)->pz * sin(theta/2);
-(tracer+ipart)->qt0 = cos(theta/2);
+//(tracer+ipart)->qt1 = (tracer+ipart)->px * sin(theta/2);
+//(tracer+ipart)->qt2 = (tracer+ipart)->py * sin(theta/2);
+//(tracer+ipart)->qt3 = (tracer+ipart)->pz * sin(theta/2);
+//(tracer+ipart)->qt0 = cos(theta/2);
 
 
 
@@ -2402,13 +2414,14 @@ void move_particles(){
 //    (tracer+ipart)->aspect_ratio = b/a ;
   aspr = (tracer+ipart)->aspect_ratio ; 
 // mp is the mass of the particle (zhang et al 2001)
-    mp = 4/3*pi*pow(a,3)*aspr*rhop ;
+    a = aspr;
+    mp = 4/3*3.1415*pow(a,3)*aspr*rhop ;
 
-    matK[0][0] = (16*pi*a*pow((aspr*aspr - 1),3/2))/((2*aspr*aspr - 3)*log(aspr+pow((aspr*aspr-1),1/2)) + aspr*pow((aspr*aspr-1),1/2));
+    matK[0][0] = (16*3.1415*a*pow((aspr*aspr - 1),3/2))/((2*aspr*aspr - 3)*log(aspr+pow((aspr*aspr-1),1/2)) + aspr*pow((aspr*aspr-1),1/2));
 
     matK[1][1] = matK[0][0];
 
-    matK[2][2] = (8*pi*a*pow((aspr*aspr - 1),3/2))/((2*aspr*aspr - 1)*log(aspr+pow((aspr*aspr-1),1/2)) + aspr*pow((aspr*aspr-1),1/2));
+    matK[2][2] = (8*31415*a*pow((aspr*aspr - 1),3/2))/((2*aspr*aspr - 1)*log(aspr+pow((aspr*aspr-1),1/2)) + aspr*pow((aspr*aspr-1),1/2));
 
 
 
@@ -2417,13 +2430,13 @@ void move_particles(){
           /* For transformation of co-ordinates from Lab frome to body frame */
           /* general form  */
                for (m=1; m<3; m++){
-                     p = 0;
+                     inv = 0;
                  for (l=0; l<3; l++){
                      r = 0;
                    for (k=0; k<3; k++){
                      r += matR[l][k]*matK[k][l];
                     }
-                     matKT[m][l] += r * matR[m][l];
+                     matKT[m][l] += inv * matR[m][l];
                       }
                          }
                        
@@ -2490,13 +2503,13 @@ void move_particles(){
     /* For transformation of co-ordinates from Lab frome to body frame for tensor */
 
       for (m=1; m<3; m++){
-           p = 0;
+           inv = 0;
            for (l=0; l<3; l++){
                r = 0;
                for (k=0; k<3; k++){
                    r += matR[l][k]*matD[k][l];
                }
-               matDT[m][l] += r * matR[m][l];
+               matDT[m][l] += inv * matR[m][l];
             }
        }
 
@@ -2526,11 +2539,11 @@ void move_particles(){
 
     /* computation of torque using the values computed */
 
-    T_x = (16*pi*property.nu*pow(a,3)*aspr)/(3*(beta0 + (aspr*aspr)*gamma0)) * ((1-(aspr*aspr)) * matSB[2][1] + (1+ (aspr*aspr)) * ( matWB[1][2] - (tracer+ipart)->ox)) ;
+    T_x = (16*3.1415*property.nu*pow(a,3)*aspr)/(3*(beta0 + (aspr*aspr)*gamma0)) * ((1-(aspr*aspr)) * matSB[2][1] + (1+ (aspr*aspr)) * ( matWB[1][2] - (tracer+ipart)->ox)) ;
 
-    T_y = (16*pi*property.nu*pow(a,3)*aspr)/(3*((aspr*aspr)*gamma0 + alpha0))*(((aspr*aspr) - 1) * matSB[0][2] + ((aspr*aspr)+1) * ( matWB[0][2] - (tracer+ipart)->oy)) ;
+    T_y = (16*3.1415*property.nu*pow(a,3)*aspr)/(3*((aspr*aspr)*gamma0 + alpha0))*(((aspr*aspr) - 1) * matSB[0][2] + ((aspr*aspr)+1) * ( matWB[0][2] - (tracer+ipart)->oy)) ;
 
-    T_z = (32*pi*property.nu*pow(a,3)*aspr)/(3*(alpha0 + gamma0))*( matWB[1][0] - (tracer+ipart)->oz) ;
+    T_z = (32*3.1415*property.nu*pow(a,3)*aspr)/(3*(alpha0 + gamma0))*( matWB[1][0] - (tracer+ipart)->oz) ;
     
 
     /* compute angular velocity */

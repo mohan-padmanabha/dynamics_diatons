@@ -1,0 +1,2 @@
+type 0 counter_all 1000 tau_drag 1.000000e+02 aspect_ratio 1.000000e-01 
+type 1 counter_all 1000 tau_drag 1.000000e+02 aspect_ratio 1.000000e+01 
