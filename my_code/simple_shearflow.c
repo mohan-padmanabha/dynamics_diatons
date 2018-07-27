@@ -10,7 +10,7 @@ int main() {
       /* translation */
     double q0, q1, q2, q3;
     double matR[3][3], matK[3][3], matKT[3][3];
-    double aspr, mp, a, rhop, mu, pi;
+    double aspr, mp, a, rhop, mu, pi, nu, time_dt;
     double k_tranx, k_trany, k_tranz;
     double fx, fy, fz;
     double v12x, v12y, v12z;
@@ -29,6 +29,8 @@ int main() {
     double qt0, qt1, qt2, qt3;
     double ox,oy,oz;
     double ox_old,oy_old,oz_old;
+    double vx,vy,vz;
+    double vx_old,vy_old,vz_old;
 
     double u = 0;
 /* initial conditions */
@@ -49,15 +51,14 @@ phi = two_pi*myrand();
  vec = random_vector();
 */
 
-
 //  #ifdef LAGRANGE_ORIENTATION_TRANSLATION
 
-   double pi = 3.1415;
-   double theta = 0. ;
-   double aspr = 5;
-   double bx = 1;
-   double rhop = 1.1;
-   double a = aspr * bx ;
+   pi = 3.1415;
+   theta = 0. ;
+   aspr = 2;
+   double bx = 0.001;
+   rhop = 1.1;
+   a = aspr * bx ;
    double ux = 0;
    double uz = 0;
    double uy = ux;
@@ -68,6 +69,9 @@ phi = two_pi*myrand();
    double px = 0;
    double py = 1;
    double pz = 0;
+   double x = 0;
+   double y = 0;
+   double z = 0;
 
     double dx_ux = 0 ; double dy_ux = 1 ; double dz_ux = 0;
     double dx_uy = 0 ; double dy_uy = 0 ; double dz_uy = 0;
@@ -81,8 +85,8 @@ phi = two_pi*myrand();
  q0 = cos(theta/2);
 
 
-   qdata = fopen("quat_data.txt","w");
-   vdata = fopen("vec_data.txt","w");
+   FILE * qdata = fopen("quat_data.txt","w");
+   FILE * vdata = fopen("vec_data.txt","w");
 
 for(i=0; i < itr ; i++){
 
@@ -126,11 +130,9 @@ for(i=0; i < itr ; i++){
 /* hydrodynamic drag force (brenner 1964 && zhang et al 2001) */
  
 
-    fx = property.nu * matKT[0][0] * ( ux -  vx);
-    fy = property.nu * matKT[1][1] * ( uy -  vy);
-    fz = property.nu * matKT[2][2] * ( uz -  vz); 
-
-
+    fx = (matKT[0][0]*(ux - vx) +  matKT[0][1]*(uy - vy) +  matKT[0][2]*(uz - vz))*nu; 
+    fy = (matKT[1][0]*(ux - vx) +  matKT[1][1]*(uy - vy) +  matKT[1][2]*(uz - vz))*nu;
+    fz = (matKT[2][0]*(ux - vx) +  matKT[2][1]*(uy - vy) +  matKT[2][2]*(uz - vz))*nu;
 
     /* Here compute v particle at time n-1/2 */
     v12x =  0.5 * ( vx +  vx_old);
@@ -144,16 +146,16 @@ for(i=0; i < itr ; i++){
 
     /* Here compute v particle at time n+1/2 */
 
-     vx = v12x + (fx * property.time_dt) / mp;
-     vy = v12y + (fy * property.time_dt) / mp;
-     vz = v12z + (fz * property.time_dt) / mp;
+     vx = v12x + (fx * time_dt) / mp;
+     vy = v12y + (fy * time_dt) / mp;
+     vz = v12z + (fz * time_dt) / mp;
 
     /* Here compute v particle at time n */
 
       /* computation of the position */
-     x += ( vx * property.time_dt);
-     y += ( vy * property.time_dt);
-     z += ( vz * property.time_dt);
+     x += ( vx * time_dt);
+     y += ( vy * time_dt);
+     z += ( vz * time_dt);
  
     /* to find the value of v  by extrapolation at time n +1 for next iteration */ 
      vx = 0.5 * (v12x + 3* vx);
@@ -220,11 +222,11 @@ for(i=0; i < itr ; i++){
 
     /* computation of torque using the values computed */
 
-    T_x = (16*pi*property.nu*pow(a,3)*aspr)/(3*(beta0 + (aspr*aspr)*gamma0)) * ((1-(aspr*aspr)) * matSB[2][1] + (1+ (aspr*aspr)) * ( matWB[1][2] -  ox)) ;
+    T_x = (16*pi*nu*pow(a,3)*aspr)/(3*(beta0 + (aspr*aspr)*gamma0)) * ((1-(aspr*aspr)) * matSB[2][1] + (1+ (aspr*aspr)) * ( matWB[1][2] -  ox)) ;
 
-    T_y = (16*pi*property.nu*pow(a,3)*aspr)/(3*((aspr*aspr)*gamma0 + alpha0))*(((aspr*aspr) - 1) * matSB[0][2] + ((aspr*aspr)+1) * ( matWB[0][2] -  oy)) ;
+    T_y = (16*pi*nu*pow(a,3)*aspr)/(3*((aspr*aspr)*gamma0 + alpha0))*(((aspr*aspr) - 1) * matSB[0][2] + ((aspr*aspr)+1) * ( matWB[0][2] -  oy)) ;
 
-    T_z = (32*pi*property.nu*pow(a,3)*aspr)/(3*(alpha0 + gamma0))*( matWB[1][0] -  oz) ;
+    T_z = (32*pi*nu*pow(a,3)*aspr)/(3*(alpha0 + gamma0))*( matWB[1][0] -  oz) ;
     
 
     /* compute angular velocity */
@@ -251,9 +253,9 @@ for(i=0; i < itr ; i++){
      oz_old= oz;
 
     /* estimating the value of omega at time t */
-     ox = o12x + (do_x * (property.time_dt*0.5));
-     oy = o12y + (do_y * (property.time_dt*0.5));
-     oz = o12z + (do_z * (property.time_dt*0.5));   
+     ox = o12x + (do_x * (time_dt*0.5));
+     oy = o12y + (do_y * (time_dt*0.5));
+     oz = o12z + (do_z * (time_dt*0.5));   
 
     /* transformation: From angular momentum in the lab frame to body frame */
     obx = matR[0][0] * ox + matR[0][1] * oy + matR[0][2] * oz;
@@ -268,10 +270,10 @@ for(i=0; i < itr ; i++){
 
     
     /* advancement in time  q(t+0.5*time_dt) = q(t) + 0.5*time_dt*dqdt(t) */
-    q0 += 0.5*property.time_dt*dq0dt;
-    q1 += 0.5*property.time_dt*dq1dt;
-    q2 += 0.5*property.time_dt*dq2dt;
-    q3 += 0.5*property.time_dt*dq3dt;
+    q0 += 0.5*time_dt*dq0dt;
+    q1 += 0.5*time_dt*dq1dt;
+    q2 += 0.5*time_dt*dq2dt;
+    q3 += 0.5*time_dt*dq3dt;
 
     
     /* quaternion normalization */
@@ -286,9 +288,9 @@ for(i=0; i < itr ; i++){
     q3 *= invq;
 
     /* estimating the value of omega at time t+dt/2  */
-     ox = o12x + do_x *property.time_dt;
-     oy = o12y + do_y *property.time_dt;
-     oz = o12z + do_z *property.time_dt;
+     ox = o12x + do_x *time_dt;
+     oy = o12y + do_y *time_dt;
+     oz = o12z + do_z *time_dt;
 
 
      /* rotation matrix of quaternions */
@@ -316,10 +318,10 @@ for(i=0; i < itr ; i++){
     dq2dt = 0.5 *  (B[2][1] * obx + B[2][2] * oby + B[2][3] * obz );
     dq3dt = 0.5 *  (B[3][1] * obx + B[3][2] * oby + B[3][3] * obz );
 
-    q0 += 0.5*property.time_dt*dq0dt;
-    q1 += 0.5*property.time_dt*dq1dt;
-    q2 += 0.5*property.time_dt*dq2dt;
-    q3 += 0.5*property.time_dt*dq3dt;
+    q0 += 0.5*time_dt*dq0dt;
+    q1 += 0.5*time_dt*dq1dt;
+    q2 += 0.5*time_dt*dq2dt;
+    q3 += 0.5*time_dt*dq3dt;
 
 
     /* quaternion normalization */
@@ -346,10 +348,9 @@ theta = 2 * acos(q0) ;
  py = q2 / sqrt(1-q0*q0) ;
  pz = q3 / sqrt(1-q0*q0) ;
 
-
-fprintf(qdata, "%d\t %d\t %d\t %d\t %d\t %d\n", q0, q1, q2, q3, x, y);
-fprintf(vdata, "%d\t %d\t %d\t %d\t %d\t %d\n", px, py, pz, theta, q3, x, y);
-
+printf("%e %e %e %e %e %e %e\n",mp, fx, vx, x, I_xx, T_x, ox); 
+fprintf(qdata, "%e\t %e\t %e\t %e\t %e\t %e\n", q0, q1, q2, q3, x, y);
+fprintf(vdata, "%e\t %e\t %e\t %e\t %e\t %e\n", px, py, pz, theta, x, y);
 
 }
 

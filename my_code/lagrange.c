@@ -2444,9 +2444,9 @@ void move_particles(){
 /* hydrodynamic drag force (brenner 1964 && zhang et al 2001) */
  
 
-    fx = property.nu * matKT[0][0] * ((tracer+ipart)->ux - (tracer+ipart)->vx);
-    fy = property.nu * matKT[1][1] * ((tracer+ipart)->uy - (tracer+ipart)->vy);
-    fz = property.nu * matKT[2][2] * ((tracer+ipart)->uz - (tracer+ipart)->vz); 
+    fx = (matKT[0][0]*((tracer+ipart)->ux - (tracer+ipart)->vx) +  matKT[0][1]*((tracer+ipart)->uy - (tracer+ipart)->vy) +  matKT[0][2]*((tracer+ipart)->uz - (tracer+ipart)->vz))*property.nu; 
+    fy = (matKT[1][0]*((tracer+ipart)->ux - (tracer+ipart)->vx) +  matKT[1][1]*((tracer+ipart)->uy - (tracer+ipart)->vy) +  matKT[1][2]*((tracer+ipart)->uz - (tracer+ipart)->vz))*property.nu;
+    fz = (matKT[2][0]*((tracer+ipart)->ux - (tracer+ipart)->vx) +  matKT[2][1]*((tracer+ipart)->uy - (tracer+ipart)->vy) +  matKT[2][2]*((tracer+ipart)->uz - (tracer+ipart)->vz))*property.nu; 
 
 
 
