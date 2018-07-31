@@ -54,36 +54,41 @@ phi = two_pi*myrand();
 //  #ifdef LAGRANGE_ORIENTATION_TRANSLATION
 
    pi = 3.1415;
-   theta = 0. ;
+   theta = 90. ;
    aspr = 2;
    double bx = 0.001;
    rhop = 1.1;
    a = aspr * bx ;
-   double ux = 0;
-   double uz = 0;
-   double uy = ux;
-   double du_dx = 1;
-   double x_max = 5;
-   double y_max = 5;
-   double itr = 1000;
-   double px = 0;
-   double py = 1;
-   double pz = 0;
    double x = 0;
    double y = 0;
    double z = 0;
 
-    double dx_ux = 0 ; double dy_ux = 1 ; double dz_ux = 0;
+   double uz = 0;
+   double du_dx = 1;
+   double x_max = 5;
+   double y_max = 5;
+   double itr = 1000;
+   double px = 1;
+   double py = 1;
+   double pz = 1;
+   vx = 1;
+   vy = 1;
+   vz = 1;
+
+    double dx_ux = 0 ; double dy_ux = 10 ; double dz_ux = 0;
     double dx_uy = 0 ; double dy_uy = 0 ; double dz_uy = 0;
     double dx_uz = 0 ; double dy_uz = 0 ; double dz_uz = 0;
 /* conversion from axis angles to quaternions */
-
+   
+   double uy = dy_ux * y;
+   double ux = uy;
+   
 
  q1 =  px * sin(theta/2);
  q2 =  py * sin(theta/2);
  q3 =  pz * sin(theta/2);
  q0 = cos(theta/2);
-
+// printf("%e %e %e %e", q0, q1, q2, q3);
 
    FILE * qdata = fopen("quat_data.txt","w");
    FILE * vdata = fopen("vec_data.txt","w");
@@ -94,7 +99,8 @@ for(i=0; i < itr ; i++){
     matR[0][0] = 1-2*(q2*q2+q3*q3);  matR[1][0] = 2*(q1*q2-q0*q3);   matR[2][0] = 2*(q1*q3+q0*q2); 
     matR[0][1] = 2*(q1*q2+q0*q3);   matR[1][1] = 1-2*(q1*q1+q3*q3);  matR[2][1] = 2*(q2*q3-q0*q1);
     matR[0][2] = 2*(q1*q3-q0*q2);   matR[1][2] = 2*(q2*q3+q0*q1);   matR[2][2] = 1-2*(q1*q1+q2*q2);  
- 
+   
+ //    printf("%e %e %e %e \n", matR[0][0], matR[0][1], matR[0][2], matR[1][0]);
      
 
  // aspect ratio is major axis / minor axis
@@ -109,31 +115,34 @@ for(i=0; i < itr ; i++){
 
     matK[2][2] = (8*pi*a*pow((aspr*aspr - 1),3/2))/((2*aspr*aspr - 1)*log(aspr+pow((aspr*aspr-1),1/2)) + aspr*pow((aspr*aspr-1),1/2));
 
-
+//     printf("%e %e %e\n", matK[0][0], matK[1][1], matK[2][2]);
 
 /* translation dyadic or resistance tensor */
 
           /* For transformation of co-ordinates from Lab frome to body frame */
           /* general form  */
-               for (m=1; m<3; m++){
+               for (m=0; m<3; m++){
                      p = 0;
                  for (l=0; l<3; l++){
                      r = 0;
                    for (k=0; k<3; k++){
-                     r += matR[l][k]*matK[k][l];
+                     r += matR[m][k]*matK[k][l];                    
                     }
-                     matKT[m][l] += p * matR[m][l];
-                      }
-                         }
+                     p += r * matR[m][l];
+                     matKT[m][l] = p;
+                      printf("%e %e %e %e %e\n",matKT[m][l], vx, ux, x, y);
+ 
+                      }  
+                     
+                  }
                        
 
 /* hydrodynamic drag force (brenner 1964 && zhang et al 2001) */
  
-
-    fx = (matKT[0][0]*(ux - vx) +  matKT[0][1]*(uy - vy) +  matKT[0][2]*(uz - vz))*nu; 
-    fy = (matKT[1][0]*(ux - vx) +  matKT[1][1]*(uy - vy) +  matKT[1][2]*(uz - vz))*nu;
-    fz = (matKT[2][0]*(ux - vx) +  matKT[2][1]*(uy - vy) +  matKT[2][2]*(uz - vz))*nu;
-
+    fx = matKT[0][0]*(ux - vx); // +  matKT[0][1]*(uy - vy) +  matKT[0][2]*(uz - vz))*nu; 
+    fy = matKT[1][0]*(ux - vx); // +  matKT[1][1]*(uy - vy) +  matKT[1][2]*(uz - vz))*nu;
+    fz = matKT[2][0]*(ux - vx); // +  matKT[2][1]*(uy - vy) +  matKT[2][2]*(uz - vz))*nu;
+    printf("%e %e %e\n", fx, fy, fz);
     /* Here compute v particle at time n-1/2 */
     v12x =  0.5 * ( vx +  vx_old);
     v12y =  0.5 * ( vy +  vy_old);
@@ -186,16 +195,20 @@ for(i=0; i < itr ; i++){
 
     /* For transformation of co-ordinates from Lab frome to body frame for tensor */
 
-      for (m=1; m<3; m++){
+      for (m=0; m<3; m++){
            p = 0;
            for (l=0; l<3; l++){
                r = 0;
                for (k=0; k<3; k++){
                    r += matR[l][k]*matD[k][l];
                }
-               matDT[m][l] += p * matR[m][l];
+               p += r * matR[m][l];
+               matDT[m][l] = p;
             }
+             
        }
+
+
 
      /* Compute Sij for body frame*/
     /*make simmetric*/
@@ -348,7 +361,7 @@ theta = 2 * acos(q0) ;
  py = q2 / sqrt(1-q0*q0) ;
  pz = q3 / sqrt(1-q0*q0) ;
 
-printf("%e %e %e %e %e %e %e\n",mp, fx, vx, x, I_xx, T_x, ox); 
+ printf("%e %e %e %e %e %e %e %e %e\n", mp, matKT[0][0], matK[0][0], fx, vx, x, I_xx, T_x, ox); 
 fprintf(qdata, "%e\t %e\t %e\t %e\t %e\t %e\n", q0, q1, q2, q3, x, y);
 fprintf(vdata, "%e\t %e\t %e\t %e\t %e\t %e\n", px, py, pz, theta, x, y);
 
