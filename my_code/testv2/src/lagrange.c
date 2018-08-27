@@ -2429,16 +2429,20 @@ void move_particles(){
 
           /* For transformation of co-ordinates from Lab frome to body frame */
           /* general form  */
-               for (m=1; m<3; m++){
+               for (m=0; m<3; m++){
                      inv = 0;
                  for (l=0; l<3; l++){
                      r = 0;
                    for (k=0; k<3; k++){
-                     r += matR[l][k]*matK[k][l];
+                     r += matR[m][k]*matK[k][l];                    
                     }
-                     matKT[m][l] += inv * matR[m][l];
-                      }
-                         }
+                     inv += r * matR[m][l];
+                     matKT[m][l] = inv;
+                    //  printf("%e %e %e %e %e\n",matKT[m][l], vx, ux, x, y);
+ 
+                      }  
+                     
+                  } 
                        
 
 /* hydrodynamic drag force (brenner 1964 && zhang et al 2001) */
@@ -2502,15 +2506,17 @@ void move_particles(){
 
     /* For transformation of co-ordinates from Lab frome to body frame for tensor */
 
-      for (m=1; m<3; m++){
+      for (m=0; m<3; m++){
            inv = 0;
            for (l=0; l<3; l++){
                r = 0;
                for (k=0; k<3; k++){
                    r += matR[l][k]*matD[k][l];
                }
-               matDT[m][l] += inv * matR[m][l];
+               inv += r * matR[m][l];
+               matDT[m][l] = inv;
             }
+             
        }
 
      /* Compute Sij for body frame*/

@@ -1,0 +1,60 @@
+<?xml version="1.0" ?>
+<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
+<Xdmf Version="2.0">
+<Domain>
+<Grid Name="FiniteVolumeLB" GridType="Uniform">
+<Topology TopologyType="3DSMesh" NumberOfElements="1 50 50"/>
+<Geometry GeometryType="X_Y_Z">
+<DataItem Name="X" Dimensions="1 50 50" NumberType="Float" Precision="8" Format="HDF">
+field_24800.h5:/euler/position_x
+</DataItem>
+<DataItem Name="Y" Dimensions="1 50 50" NumberType="Float" Precision="8" Format="HDF">
+field_24800.h5:/euler/position_y
+</DataItem>
+<DataItem Name="Z" Dimensions="1 50 50" NumberType="Float" Precision="8" Format="HDF">
+field_24800.h5:/euler/position_z
+</DataItem>
+</Geometry>
+<Attribute Name="velocity_x" AttributeType="Scalar" Center="Node">
+<DataItem Dimensions="1 50 50" NumberType="Float" Precision="8" Format="HDF">
+field_24800.h5:/euler/velocity_x
+</DataItem>
+</Attribute>
+<Attribute Name="velocity_y" AttributeType="Scalar" Center="Node">
+<DataItem Dimensions="1 50 50" NumberType="Float" Precision="8" Format="HDF">
+field_24800.h5:/euler/velocity_y
+</DataItem>
+</Attribute>
+<Attribute Name="velocity_z" AttributeType="Scalar" Center="Node">
+<DataItem Dimensions="1 50 50" NumberType="Float" Precision="8" Format="HDF">
+field_24800.h5:/euler/velocity_z
+</DataItem>
+</Attribute>
+<Attribute Name="density" AttributeType="Scalar" Center="Node">
+<DataItem Dimensions="1 50 50" NumberType="Float" Precision="8" Format="HDF">
+field_24800.h5:/euler/density
+</DataItem>
+</Attribute>
+<Attribute Name="velocity" AttributeType="Vector" Center="Node">
+<DataItem ItemType="Function" Dimensions="1 50 50 3" 
+   Function="JOIN($0 , $1, $2)">
+<DataItem Dimensions="1 50 50 1" NumberType="Float" Precision="8" Format="HDF">
+field_24800.h5:/euler/velocity_x
+</DataItem>
+<DataItem Dimensions="1 50 50 1" NumberType="Float" Precision="8" Format="HDF">
+field_24800.h5:/euler/velocity_y
+</DataItem>
+<DataItem Dimensions="1 50 50 1" NumberType="Float" Precision="8" Format="HDF">
+field_24800.h5:/euler/velocity_z
+</DataItem>
+</DataItem>
+</Attribute>
+<Attribute Name="temperature" AttributeType="Scalar" Center="Node">
+<DataItem Dimensions="1 50 50" NumberType="Float" Precision="8" Format="HDF">
+field_24800.h5:/euler/temperature
+</DataItem>
+</Attribute>
+<Time Value=" 2.479900e+04" />
+</Grid>
+</Domain>
+</Xdmf>

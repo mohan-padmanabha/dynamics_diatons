@@ -54,28 +54,33 @@ phi = two_pi*myrand();
 //  #ifdef LAGRANGE_ORIENTATION_TRANSLATION
 
    pi = 3.1415;
-   theta = 90. ;
-   aspr = 2;
+   theta = 0. ;
+   aspr = 4;
+   nu = 0.0000015 ;
    double bx = 0.001;
    rhop = 1.1;
    a = aspr * bx ;
-   double x = 0;
-   double y = 0;
-   double z = 0;
+   double x = 1;
+   double y = 1;
+   double z = 1;
 
    double uz = 0;
    double du_dx = 1;
    double x_max = 5;
    double y_max = 5;
-   double itr = 1000;
-   double px = 1;
-   double py = 1;
-   double pz = 1;
-   vx = 1;
-   vy = 1;
-   vz = 1;
+   int itr = 10;
+   double px = 0;
+   double py = 0;
+   double pz = 0;
+   vx = 0;
+   vy = 0;
+   vz = 0;
+   vx_old = 0.0;
+   vy_old = 0.0;
+   vz_old = 0.0;
 
-    double dx_ux = 0 ; double dy_ux = 10 ; double dz_ux = 0;
+
+    double dx_ux = 0 ; double dy_ux = 2 ; double dz_ux = 0;
     double dx_uy = 0 ; double dy_uy = 0 ; double dz_uy = 0;
     double dx_uz = 0 ; double dy_uz = 0 ; double dz_uz = 0;
 /* conversion from axis angles to quaternions */
@@ -88,20 +93,11 @@ phi = two_pi*myrand();
  q2 =  py * sin(theta/2);
  q3 =  pz * sin(theta/2);
  q0 = cos(theta/2);
-// printf("%e %e %e %e", q0, q1, q2, q3);
+ printf("%e %e %e %e", q0, q1, q2, q3);
 
    FILE * qdata = fopen("quat_data.txt","w");
    FILE * vdata = fopen("vec_data.txt","w");
 
-for(i=0; i < itr ; i++){
-
-     /* rotation matrix of quaternions */
-    matR[0][0] = 1-2*(q2*q2+q3*q3);  matR[1][0] = 2*(q1*q2-q0*q3);   matR[2][0] = 2*(q1*q3+q0*q2); 
-    matR[0][1] = 2*(q1*q2+q0*q3);   matR[1][1] = 1-2*(q1*q1+q3*q3);  matR[2][1] = 2*(q2*q3-q0*q1);
-    matR[0][2] = 2*(q1*q3-q0*q2);   matR[1][2] = 2*(q2*q3+q0*q1);   matR[2][2] = 1-2*(q1*q1+q2*q2);  
-   
- //    printf("%e %e %e %e \n", matR[0][0], matR[0][1], matR[0][2], matR[1][0]);
-     
 
  // aspect ratio is major axis / minor axis
  // already present in the code 
@@ -115,7 +111,23 @@ for(i=0; i < itr ; i++){
 
     matK[2][2] = (8*pi*a*pow((aspr*aspr - 1),3/2))/((2*aspr*aspr - 1)*log(aspr+pow((aspr*aspr-1),1/2)) + aspr*pow((aspr*aspr-1),1/2));
 
-//     printf("%e %e %e\n", matK[0][0], matK[1][1], matK[2][2]);
+     printf("matK=%e %e %e\n", matK[0][0], matK[1][1], matK[2][2]);
+	
+
+for(i=0; i < itr ; i++){
+
+
+
+    uy = dy_ux * y;
+    ux = uy;
+     /* rotation matrix of quaternions */
+    matR[0][0] = 1-2*(q2*q2+q3*q3);  matR[1][0] = 2*(q1*q2-q0*q3);   matR[2][0] = 2*(q1*q3+q0*q2); 
+    matR[0][1] = 2*(q1*q2+q0*q3);   matR[1][1] = 1-2*(q1*q1+q3*q3);  matR[2][1] = 2*(q2*q3-q0*q1);
+    matR[0][2] = 2*(q1*q3-q0*q2);   matR[1][2] = 2*(q2*q3+q0*q1);   matR[2][2] = 1-2*(q1*q1+q2*q2);  
+   
+     printf("matR %e %e %e %e \n", matR[0][0], matR[0][1], matR[0][2], matR[1][0]);
+     
+
 
 /* translation dyadic or resistance tensor */
 
@@ -130,7 +142,7 @@ for(i=0; i < itr ; i++){
                     }
                      p += r * matR[m][l];
                      matKT[m][l] = p;
-                      printf("%e %e %e %e %e\n",matKT[m][l], vx, ux, x, y);
+                    //  printf("%e %e %e %e %e\n",matKT[m][l], vx, ux, x, y);
  
                       }  
                      
@@ -139,10 +151,10 @@ for(i=0; i < itr ; i++){
 
 /* hydrodynamic drag force (brenner 1964 && zhang et al 2001) */
  
-    fx = matKT[0][0]*(ux - vx); // +  matKT[0][1]*(uy - vy) +  matKT[0][2]*(uz - vz))*nu; 
-    fy = matKT[1][0]*(ux - vx); // +  matKT[1][1]*(uy - vy) +  matKT[1][2]*(uz - vz))*nu;
-    fz = matKT[2][0]*(ux - vx); // +  matKT[2][1]*(uy - vy) +  matKT[2][2]*(uz - vz))*nu;
-    printf("%e %e %e\n", fx, fy, fz);
+    fx = (matKT[0][0]*(ux - vx) +  matKT[0][1]*(uy - vy) +  matKT[0][2]*(uz - vz))*nu; 
+    fy = (matKT[1][0]*(ux - vx) +  matKT[1][1]*(uy - vy) +  matKT[1][2]*(uz - vz))*nu;
+    fz = (matKT[2][0]*(ux - vx) +  matKT[2][1]*(uy - vy) +  matKT[2][2]*(uz - vz))*nu;
+     printf("force =%e %e %e\n", fx, fy, fz);
     /* Here compute v particle at time n-1/2 */
     v12x =  0.5 * ( vx +  vx_old);
     v12y =  0.5 * ( vy +  vy_old);
@@ -158,7 +170,7 @@ for(i=0; i < itr ; i++){
      vx = v12x + (fx * time_dt) / mp;
      vy = v12y + (fy * time_dt) / mp;
      vz = v12z + (fz * time_dt) / mp;
-
+     
     /* Here compute v particle at time n */
 
       /* computation of the position */
@@ -170,7 +182,7 @@ for(i=0; i < itr ; i++){
      vx = 0.5 * (v12x + 3* vx);
      vy = 0.5 * (v12y + 3* vy);
      vz = 0.5 * (v12z + 3* vz);   
-
+     printf("velocity =%e %e %e\n", vx, vy, vz);
      /* ----------------------------------------------------------------------------------------------------*/
      /* orientation computation */
 
@@ -291,14 +303,14 @@ for(i=0; i < itr ; i++){
     
     /* quaternion normalization */
     
-    qsq =q0*q0 + q1*q1 + q2*q2 + q3*q3;
+     qsq =q0*q0 + q1*q1 + q2*q2 + q3*q3;
     
     invq = 1.0/ sqrt(qsq);
 
-    q0 *= invq;
-    q1 *= invq;
-    q2 *= invq;
-    q3 *= invq;
+  //  q0 *= invq;
+   // q1 *= invq;
+   // q2 *= invq;
+   // q3 *= invq;
 
     /* estimating the value of omega at time t+dt/2  */
      ox = o12x + do_x *time_dt;
@@ -343,10 +355,10 @@ for(i=0; i < itr ; i++){
     
     invq = 1.0/ sqrt(qsq);
 
-    q0 *= invq;
-    q1 *= invq;
-    q2 *= invq;
-    q3 *= invq;
+  //  q0 *= invq;
+  //  q1 *= invq;
+  //  q2 *= invq;
+  //  q3 *= invq;
 
 /* extrapolation to predict the value of ox at time t+dt */
 
@@ -361,7 +373,10 @@ theta = 2 * acos(q0) ;
  py = q2 / sqrt(1-q0*q0) ;
  pz = q3 / sqrt(1-q0*q0) ;
 
- printf("%e %e %e %e %e %e %e %e %e\n", mp, matKT[0][0], matK[0][0], fx, vx, x, I_xx, T_x, ox); 
+ printf("q0=%e q1=%e q2=%e q3=%e \n", q0, q1, q2, q3);
+// printf("mp = %e\t KT = %e\t ux = %e\t fx = %e\t vx = %e\t x = %e\t ixx = %e\t tx = %e\t ox = %e\n", mp, matKT[0][0], ux, fx, vx, x, I_xx, T_x, ox); 
+// printf("mp = %e\t KT = %e\t uy = %e\t fy = %e\t vy = %e\t y = %e\t iyy = %e\t ty = %e\t oy = %e\n", mp, matKT[1][1], uy, fy, vy, y, I_yy, T_y, oy); 
+// printf("mp = %e\t KT = %e\t uz = %e\t fz = %e\t vz = %e\t z = %e\t izz = %e\t tz = %e\t oz = %e\n", mp, matKT[2][2], uz, fz, vz, z, I_zz, T_z, oz); 
 fprintf(qdata, "%e\t %e\t %e\t %e\t %e\t %e\n", q0, q1, q2, q3, x, y);
 fprintf(vdata, "%e\t %e\t %e\t %e\t %e\t %e\n", px, py, pz, theta, x, y);
 
