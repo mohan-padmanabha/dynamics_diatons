@@ -2277,7 +2277,7 @@ void move_particles(){
    if( (tracer+ipart)->dt_t>0.0 ){ 
      reactivity = 1.0; 
    }else{ 
-     reactivity = 0.0;
+     reactivity = 0.0;de	
    }
    (tracer+ipart)->vx += reactivity * ((tracer+ipart)->swim_velocity)*((tracer+ipart)->px);
    (tracer+ipart)->vy += reactivity * ((tracer+ipart)->swim_velocity)*((tracer+ipart)->py);
@@ -2331,7 +2331,7 @@ void move_particles(){
    /* With drag force */ 
    //   if((tracer+ipart)->tau_drag != 0.0){
    if((tracer+ipart)->tau_drag > 0.0){    /* why >0 , because ==0 is a tracer and <0 is an eulerian probe */
-  
+
 #ifndef LAGRANGE_ORIENTATION_DRAG
    /* Stokes drag acceleration on a sphere */
    invtau = 1.0 / (tracer+ipart)->tau_drag; 
@@ -2343,6 +2343,7 @@ void move_particles(){
    /* same notation as in PRL 119, 254501 (2017) see also its supplementary materials */
    /* The aspect ratio is a_par / a_perp */ 
     alpha = (tracer+ipart)->aspect_ratio; 
+printf("px=%e py=%e pz=%e \n",(tracer+ipart)->px, (tracer+ipart)->py, (tracer+ipart)->pz); 
    /* Note that the meaning of the parameter tau_drag in our code is  ( \rho_p 2 a_perp^2 ) / (9 \nu \rho_f )  */
    /* The particle relaxation time however is ~ ( \rho_p 2 a_perp a_par ) / (9 \nu \rho_f ) = tau_drag * alpha */
     invtau = 1.0 / ( (tracer+ipart)->tau_drag * alpha );  
@@ -2392,7 +2393,7 @@ void move_particles(){
 //(tracer+ipart)->qt2 = (tracer+ipart)->py * sin(theta/2);
 //(tracer+ipart)->qt3 = (tracer+ipart)->pz * sin(theta/2);
 //(tracer+ipart)->qt0 = cos(theta/2);
-
+    
 
 
     /* assigning to the local variable */
@@ -2667,9 +2668,9 @@ void move_particles(){
 
 /* conversion from quaternions to axis angles */
 theta = 2 * acos(q0) ;
-(tracer+ipart)->px = q1 / sqrt(1-q0*q0) ;
-(tracer+ipart)->py = q2 / sqrt(1-q0*q0) ;
-(tracer+ipart)->pz = q3 / sqrt(1-q0*q0) ;
+(tracer+ipart)->px = matR[0][0]  ;
+(tracer+ipart)->py = matR[0][1]  ;
+(tracer+ipart)->pz = matR[0][2]  ;
 
 
    /* assigning the values back to variables */  
@@ -3265,11 +3266,11 @@ if(  part.x >= mesh[IDXG(BRD, BRD, BRD)].x && part.x < mesh[IDXG(LNXG+BRD-1,BRD,
 #ifdef LAGRANGE_DEBUG
        if(itime%10==0 && ROOT)fprintf(stderr,"------------------ Check npart = %d\n",all_npart);
 #endif
-       if(all_npart != (int)property.particle_number){
-         if(ROOT) fprintf(stderr,"Total number of particles has changed during run!!!!\n Was %d now is %d\n Exit.\n",(int)property.particle_number, all_npart);
-         MPI_Finalize();
-         exit(0);
-       }
+//       if(all_npart != (int)property.particle_number){
+//         if(ROOT) fprintf(stderr,"Total number of particles has changed during run!!!!\n Was %d now is %d\n Exit.\n",(int)property.particle_number, all_npart);
+//         MPI_Finalize();
+//         exit(0);
+//       }
 
  
 

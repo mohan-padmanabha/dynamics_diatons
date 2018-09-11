@@ -1,8 +1,8 @@
-Total execution time 3.377093e+01
-Time steps 50001
-Execution time per time step 6.754052e-04
-Execution time per grid point 1.350837e-02
-Execution time per time step and grid point 2.701621e-07
+Total execution time 1.762181e+00
+Time steps 501
+Execution time per time step 3.517328e-03
+Execution time per grid point 7.048726e-04
+Execution time per time step and grid point 1.406931e-06
 Time ticks on this machine 1.000000e-09
 Number of processes for this run 1
-Execution time per process 3.377093e+01
+Execution time per process 1.762181e+00

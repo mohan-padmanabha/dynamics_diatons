@@ -59,6 +59,7 @@ phi = two_pi*myrand();
    nu = 0.0000015 ;
    double bx = 0.001;
    rhop = 1.1;
+   time_dt = 1;
    a = aspr * bx ;
    double x = 1;
    double y = 1;
@@ -68,7 +69,7 @@ phi = two_pi*myrand();
    double du_dx = 1;
    double x_max = 5;
    double y_max = 5;
-   int itr = 10;
+   int itr = 100;
    double px = 0;
    double py = 0;
    double pz = 0;
@@ -79,6 +80,13 @@ phi = two_pi*myrand();
    vy_old = 0.0;
    vz_old = 0.0;
 
+   ox = 0.0;
+   oy = 0.0;
+   oz = 0.0;
+
+   ox_old = 0.0;
+   oy_old = 0.0;
+   oz_old = 0.0;
 
     double dx_ux = 0 ; double dy_ux = 2 ; double dz_ux = 0;
     double dx_uy = 0 ; double dy_uy = 0 ; double dz_uy = 0;
@@ -113,6 +121,18 @@ phi = two_pi*myrand();
 
      printf("matK=%e %e %e\n", matK[0][0], matK[1][1], matK[2][2]);
 	
+        /* moment of inertia (diagnal in body frame)*/
+    I_xx = ((1+(aspr*aspr))*(a*a)*mp)/(5) ;
+    I_yy = I_xx ;
+    I_zz = (2*a*a*mp)/(5) ;
+
+
+
+       /* computation of constants alpha0 beta0 and gamma0 to compute torque */
+
+    alpha0 = ((aspr*aspr)/((aspr*aspr) - 1)) + aspr/(2*pow(((aspr*aspr)-1),3/2)* log((aspr - sqrt((aspr*aspr) - 1))/(aspr + sqrt((aspr*aspr)-1))));
+    beta0 = alpha0 ;
+    gamma0 = - (2/((aspr*aspr) - 1)) - aspr/(pow(((aspr*aspr)-1),3/2)* log((aspr - sqrt((aspr*aspr) - 1))/(aspr + sqrt((aspr*aspr)-1))));
 
 for(i=0; i < itr ; i++){
 
@@ -183,7 +203,7 @@ for(i=0; i < itr ; i++){
      vy = 0.5 * (v12y + 3* vy);
      vz = 0.5 * (v12z + 3* vz);   
      printf("velocity =%e %e %e\n", vx, vy, vz);
-     /* ----------------------------------------------------------------------------------------------------*/
+     /* -------------------------------------------------------------------------*/
      /* orientation computation */
 
     /* multiplication matrix of quaternions to advance in time */
@@ -194,10 +214,6 @@ for(i=0; i < itr ; i++){
 
 
 
-    /* moment of inertia (diagnal in body frame)*/
-    I_xx = ((1+(aspr*aspr))*(a*a)*mp)/(5) ;
-    I_yy = I_xx ;
-    I_zz = (2*a*a*mp)/(5) ;
 
 
     /* velocity gradient matrix */
@@ -239,11 +255,7 @@ for(i=0; i < itr ; i++){
                 matWB[k][l] = 0.5*(matDT[k][l]+matDT[l][k]);
                }
 
-    /* computation of constants alpha0 beta0 and gamma0 to compute torque */
 
-    alpha0 = ((aspr*aspr)/((aspr*aspr) - 1)) + aspr/(2*pow(((aspr*aspr)-1),3/2)* log((aspr - sqrt((aspr*aspr) - 1))/(aspr + sqrt((aspr*aspr)-1))));
-    beta0 = alpha0 ;
-    gamma0 = - (2/((aspr*aspr) - 1)) - aspr/(pow(((aspr*aspr)-1),3/2)* log((aspr - sqrt((aspr*aspr) - 1))/(aspr + sqrt((aspr*aspr)-1))));
 
     /* computation of torque using the values computed */
 
@@ -267,9 +279,9 @@ for(i=0; i < itr ; i++){
 
 
     /* taking average to determine the middle value */
-    o12x = 0.5*( ox_old+ ox);
-    o12y = 0.5*( oy_old+ oy);
-    o12z = 0.5*( oz_old+ oz);
+    o12x = 0.5*( ox_old + ox);
+    o12y = 0.5*( oy_old + oy);
+    o12z = 0.5*( oz_old + oz);
 
 
    /*assigning the old values*/
@@ -307,10 +319,10 @@ for(i=0; i < itr ; i++){
     
     invq = 1.0/ sqrt(qsq);
 
-  //  q0 *= invq;
-   // q1 *= invq;
-   // q2 *= invq;
-   // q3 *= invq;
+    q0 *= invq;
+    q1 *= invq;
+    q2 *= invq;
+    q3 *= invq;
 
     /* estimating the value of omega at time t+dt/2  */
      ox = o12x + do_x *time_dt;
@@ -355,10 +367,10 @@ for(i=0; i < itr ; i++){
     
     invq = 1.0/ sqrt(qsq);
 
-  //  q0 *= invq;
-  //  q1 *= invq;
-  //  q2 *= invq;
-  //  q3 *= invq;
+    q0 *= invq;
+    q1 *= invq;
+    q2 *= invq;
+    q3 *= invq;
 
 /* extrapolation to predict the value of ox at time t+dt */
 
@@ -368,17 +380,28 @@ for(i=0; i < itr ; i++){
 
 
 /* conversion from quaternions to axis angles */
-theta = 2 * acos(q0) ;
- px = q1 / sqrt(1-q0*q0) ;
- py = q2 / sqrt(1-q0*q0) ;
- pz = q3 / sqrt(1-q0*q0) ;
+// theta = 2 * acos(q0) ;
+// px = q1 / sqrt(1-q0*q0) ;
+// py = q2 / sqrt(1-q0*q0) ;
+// pz = q3 / sqrt(1-q0*q0) ;
+
+ px = matR[0][0] ;
+ py = matR[0][1] ;
+ pz = matR[0][2] ;
+
+
+
 
  printf("q0=%e q1=%e q2=%e q3=%e \n", q0, q1, q2, q3);
-// printf("mp = %e\t KT = %e\t ux = %e\t fx = %e\t vx = %e\t x = %e\t ixx = %e\t tx = %e\t ox = %e\n", mp, matKT[0][0], ux, fx, vx, x, I_xx, T_x, ox); 
-// printf("mp = %e\t KT = %e\t uy = %e\t fy = %e\t vy = %e\t y = %e\t iyy = %e\t ty = %e\t oy = %e\n", mp, matKT[1][1], uy, fy, vy, y, I_yy, T_y, oy); 
-// printf("mp = %e\t KT = %e\t uz = %e\t fz = %e\t vz = %e\t z = %e\t izz = %e\t tz = %e\t oz = %e\n", mp, matKT[2][2], uz, fz, vz, z, I_zz, T_z, oz); 
-fprintf(qdata, "%e\t %e\t %e\t %e\t %e\t %e\n", q0, q1, q2, q3, x, y);
-fprintf(vdata, "%e\t %e\t %e\t %e\t %e\t %e\n", px, py, pz, theta, x, y);
+ printf("mp = %e\t KT = %e\t ux = %e\t fx = %e\t vx = %e\t x = %e\t ixx = %e\t tx = %e\t ox = %e\n", mp, matKT[0][0], ux, fx, vx, x, I_xx, T_x, ox); 
+ printf("mp = %e\t KT = %e\t uy = %e\t fy = %e\t vy = %e\t y = %e\t iyy = %e\t ty = %e\t oy = %e\n", mp, matKT[1][1], uy, fy, vy, y, I_yy, T_y, oy); 
+ printf("mp = %e\t KT = %e\t uz = %e\t fz = %e\t vz = %e\t z = %e\t izz = %e\t tz = %e\t oz = %e\n", mp, matKT[2][2], uz, fz, vz, z, I_zz, T_z, oz); 
+fprintf(qdata, "%e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\n", q0, q1, q2, q3, px, py, pz, x, y, z);
+fprintf(vdata, "%e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t  %e\t %e\t %e\n", ox, oy, oz, vx, vy, vz, x, y, z, fx, fy, fz, T_x, T_y, T_z);
+
+ if(x > 5) x = 0;
+ if(y > 5) y = 0;
+ if(z > 5) z = 0;
 
 }
 

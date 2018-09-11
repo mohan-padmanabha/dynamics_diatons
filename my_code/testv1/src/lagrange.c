@@ -2385,7 +2385,153 @@ void move_particles(){
 /* inserting the program for translation and rotation using quaternions */ 
 /* --------------------------------------------------------------------------------------------------------------*/
 
-  #ifdef LAGRANGE_ORIENTATION_TRANSLATION
+
+
+
+
+
+
+
+
+
+
+
+#ifdef LAGRANGE_GRAVITY /* note that works only if LB_FORCING_GRAVITY is defined */
+   /*  add: -g to acceleration */ 
+ #ifdef LAGRANGE_GRAVITY_VARIABLE
+     (tracer+ipart)->ax -= (tracer+ipart)->gravity_coeff*property.gravity_x;
+     (tracer+ipart)->ay -= (tracer+ipart)->gravity_coeff*property.gravity_y;
+     (tracer+ipart)->az -= (tracer+ipart)->gravity_coeff*property.gravity_z; 
+ #else   
+     (tracer+ipart)->ax -= property.gravity_x;
+     (tracer+ipart)->ay -= property.gravity_y;
+     (tracer+ipart)->az -= property.gravity_z; 
+ #endif
+#endif
+
+#ifdef LAGRANGE_ADDEDMASS
+  /* With Added mass */ 
+   if((tracer+ipart)->beta_coeff != 0.0){
+
+#ifdef LAGRANGE_GRAVITY
+  /*  add also: -\beta*g to acceleration */ 
+ #ifdef LAGRANGE_GRAVITY_VARIABLE
+     (tracer+ipart)->ax -= (  - (tracer+ipart)->beta_coeff )*(tracer+ipart)->gravity_coeff*property.gravity_x;
+     (tracer+ipart)->ay -= (  - (tracer+ipart)->beta_coeff )*(tracer+ipart)->gravity_coeff*property.gravity_y;
+     (tracer+ipart)->az -= (  - (tracer+ipart)->beta_coeff )*(tracer+ipart)->gravity_coeff*property.gravity_z; 
+ #else    
+     (tracer+ipart)->ax -= (  - (tracer+ipart)->beta_coeff )*property.gravity_x;
+     (tracer+ipart)->ay -= (  - (tracer+ipart)->beta_coeff )*property.gravity_y;
+     (tracer+ipart)->az -= (  - (tracer+ipart)->beta_coeff )*property.gravity_z; 
+ #endif    
+#endif
+
+  if(itime==0 && resume==0){ 
+    (tracer+ipart)->ux_old = (tracer+ipart)->ux;
+    (tracer+ipart)->uy_old = (tracer+ipart)->uy;
+    (tracer+ipart)->uz_old = (tracer+ipart)->uz;
+  }
+
+   /* Here I will write the computation of the fluid material derivative */
+   Dt_u.x = ((tracer+ipart)->ux - (tracer+ipart)->ux_old )/property.time_dt
+          + ((tracer+ipart)->ux - (tracer+ipart)->vx)*(tracer+ipart)->dx_ux 
+          + ((tracer+ipart)->uy - (tracer+ipart)->vy)*(tracer+ipart)->dy_ux 
+          + ((tracer+ipart)->uz - (tracer+ipart)->vz)*(tracer+ipart)->dz_ux;
+
+   Dt_u.y = ((tracer+ipart)->uy - (tracer+ipart)->uy_old )/property.time_dt
+          + ((tracer+ipart)->ux - (tracer+ipart)->vx)*(tracer+ipart)->dx_uy 
+          + ((tracer+ipart)->uy - (tracer+ipart)->vy)*(tracer+ipart)->dy_uy 
+          + ((tracer+ipart)->uz - (tracer+ipart)->vz)*(tracer+ipart)->dz_uy;
+
+   Dt_u.z = ((tracer+ipart)->uz - (tracer+ipart)->uz_old )/property.time_dt         
+	  + ((tracer+ipart)->ux - (tracer+ipart)->vx)*(tracer+ipart)->dx_uz 
+          + ((tracer+ipart)->uy - (tracer+ipart)->vy)*(tracer+ipart)->dy_uz 
+          + ((tracer+ipart)->uz - (tracer+ipart)->vz)*(tracer+ipart)->dz_uz;
+
+   (tracer+ipart)->ax += Dt_u.x*(tracer+ipart)->beta_coeff;
+   (tracer+ipart)->ay += Dt_u.y*(tracer+ipart)->beta_coeff;
+   (tracer+ipart)->az += Dt_u.z*(tracer+ipart)->beta_coeff;
+
+
+ #ifdef LAGRANGE_ADDEDMASS_LIFT
+   /* Here we add the Lift force */
+
+   /* compute vorticity vector : omega = nabla x u */
+   omega.x =  (tracer+ipart)->dy_uz  - (tracer+ipart)->dz_uy;
+   omega.y =  (tracer+ipart)->dz_ux  - (tracer+ipart)->dx_uz;
+   omega.z =  (tracer+ipart)->dx_uy  - (tracer+ipart)->dy_ux;
+   
+   /* lift force computation assuming lift coefficient CL = 1/2 */
+   /*  - beta/3 (u - v) x omega */
+   lift_coeff = ( (tracer+ipart)->beta_coeff )/3.0;
+
+   (tracer+ipart)->ax += -lift_coeff*( ((tracer+ipart)->uy - (tracer+ipart)->vy))*omega.z - ((tracer+ipart)->uz - (tracer+ipart)->vz))*omega.y );
+   (tracer+ipart)->ay += -lift_coeff*( ((tracer+ipart)->uz - (tracer+ipart)->vz))*omega.x - ((tracer+ipart)->ux - (tracer+ipart)->vx))*omega.z );
+   (tracer+ipart)->az += -lift_coeff*( ((tracer+ipart)->ux - (tracer+ipart)->vx))*omega.y - ((tracer+ipart)->uy - (tracer+ipart)->vy))*omega.x );
+
+ #endif /* end of lift */
+
+   }/* end of if on addedd mass */
+#endif
+
+   if(itime==0 && resume==0){
+     (tracer+ipart)->vx += property.time_dt*(tracer+ipart)->ax;
+     (tracer+ipart)->vy += property.time_dt*(tracer+ipart)->ay;
+     (tracer+ipart)->vz += property.time_dt*(tracer+ipart)->az;
+   }else{
+     (tracer+ipart)->vx += property.time_dt*0.5*(3.0*(tracer+ipart)->ax - (tracer+ipart)->ax_old);
+     (tracer+ipart)->vy += property.time_dt*0.5*(3.0*(tracer+ipart)->ay - (tracer+ipart)->ay_old);
+     (tracer+ipart)->vz += property.time_dt*0.5*(3.0*(tracer+ipart)->az - (tracer+ipart)->az_old);
+   }
+
+   (tracer+ipart)->ax_old = (tracer+ipart)->ax; 
+   (tracer+ipart)->ay_old = (tracer+ipart)->ay; 
+   (tracer+ipart)->az_old = (tracer+ipart)->az; 
+
+   if(itime==0 && resume==0){
+     (tracer+ipart)->x += property.time_dt*(tracer+ipart)->vx; 
+     (tracer+ipart)->y += property.time_dt*(tracer+ipart)->vy;
+     (tracer+ipart)->z += property.time_dt*(tracer+ipart)->vz;
+   }else{
+     (tracer+ipart)->x += property.time_dt*0.5*(3.0*(tracer+ipart)->vx - (tracer+ipart)->vx_old);
+     (tracer+ipart)->y += property.time_dt*0.5*(3.0*(tracer+ipart)->vy - (tracer+ipart)->vy_old);
+     (tracer+ipart)->z += property.time_dt*0.5*(3.0*(tracer+ipart)->vz - (tracer+ipart)->vz_old);
+   }
+   (tracer+ipart)->vx_old = (tracer+ipart)->vx; 
+   (tracer+ipart)->vy_old = (tracer+ipart)->vy; 
+   (tracer+ipart)->vz_old = (tracer+ipart)->vz; 
+
+   (tracer+ipart)->ux_old = (tracer+ipart)->ux; 
+   (tracer+ipart)->uy_old = (tracer+ipart)->uy; 
+   (tracer+ipart)->uz_old = (tracer+ipart)->uz;
+ 
+   }/* end of if on tau_drag different from zero */
+
+#ifdef LAGRANGE_ORIENTATION
+
+	      /* assign P vector */
+     vecP[0] = (tracer+ipart)->px;
+     vecP[1] = (tracer+ipart)->py;
+     vecP[2] = (tracer+ipart)->pz;
+              /* assign the last dP /dt  vector */
+     vecFold[0] = (tracer+ipart)->dt_px;
+     vecFold[1] = (tracer+ipart)->dt_py;
+     vecFold[2] = (tracer+ipart)->dt_pz;
+
+ #ifdef LAGRANGE_ORIENTATION_SECONDORIENTATION
+	      /* assign N normal vector */
+     vecN[0] = (tracer+ipart)->nx;
+     vecN[1] = (tracer+ipart)->ny;
+     vecN[2] = (tracer+ipart)->nz;
+              /* assign the last dN /dt  vector */
+     vecFNold[0] = (tracer+ipart)->dt_nx;
+     vecFNold[1] = (tracer+ipart)->dt_ny;
+     vecFNold[2] = (tracer+ipart)->dt_nz;
+ #endif
+
+ #ifdef LAGRANGE_ORIENTATION_JEFFREY
+
+   #ifdef LAGRANGE_ORIENTATION_TRANSLATION
 
 /* conversion from axis angles to quaternions */
 //(tracer+ipart)->qt1 = (tracer+ipart)->px * sin(theta/2);
@@ -2414,6 +2560,7 @@ void move_particles(){
 //    (tracer+ipart)->aspect_ratio = b/a ;
   aspr = (tracer+ipart)->aspect_ratio ; 
 // mp is the mass of the particle (zhang et al 2001)
+    a = aspr;
     mp = 4/3*3.1415*pow(a,3)*aspr*rhop ;
 
     matK[0][0] = (16*3.1415*a*pow((aspr*aspr - 1),3/2))/((2*aspr*aspr - 3)*log(aspr+pow((aspr*aspr-1),1/2)) + aspr*pow((aspr*aspr-1),1/2));
@@ -2443,9 +2590,9 @@ void move_particles(){
 /* hydrodynamic drag force (brenner 1964 && zhang et al 2001) */
  
 
-    fx = property.nu * matKT[0][0] * ((tracer+ipart)->ux - (tracer+ipart)->vx);
-    fy = property.nu * matKT[1][1] * ((tracer+ipart)->uy - (tracer+ipart)->vy);
-    fz = property.nu * matKT[2][2] * ((tracer+ipart)->uz - (tracer+ipart)->vz); 
+    fx = (matKT[0][0]*((tracer+ipart)->ux - (tracer+ipart)->vx) +  matKT[0][1]*((tracer+ipart)->uy - (tracer+ipart)->vy) +  matKT[0][2]*((tracer+ipart)->uz - (tracer+ipart)->vz))*property.nu; 
+    fy = (matKT[1][0]*((tracer+ipart)->ux - (tracer+ipart)->vx) +  matKT[1][1]*((tracer+ipart)->uy - (tracer+ipart)->vy) +  matKT[1][2]*((tracer+ipart)->uz - (tracer+ipart)->vz))*property.nu;
+    fz = (matKT[2][0]*((tracer+ipart)->ux - (tracer+ipart)->vx) +  matKT[2][1]*((tracer+ipart)->uy - (tracer+ipart)->vy) +  matKT[2][2]*((tracer+ipart)->uz - (tracer+ipart)->vz))*property.nu; 
 
 
 
@@ -2671,152 +2818,9 @@ theta = 2 * acos(q0) ;
     (tracer+ipart)->qt2 = q2;
     (tracer+ipart)->qt3 = q3;
 
-#endif
+#else
 
 
-
-
-
-
-
-
-
-
-
-#ifdef LAGRANGE_GRAVITY /* note that works only if LB_FORCING_GRAVITY is defined */
-   /*  add: -g to acceleration */ 
- #ifdef LAGRANGE_GRAVITY_VARIABLE
-     (tracer+ipart)->ax -= (tracer+ipart)->gravity_coeff*property.gravity_x;
-     (tracer+ipart)->ay -= (tracer+ipart)->gravity_coeff*property.gravity_y;
-     (tracer+ipart)->az -= (tracer+ipart)->gravity_coeff*property.gravity_z; 
- #else   
-     (tracer+ipart)->ax -= property.gravity_x;
-     (tracer+ipart)->ay -= property.gravity_y;
-     (tracer+ipart)->az -= property.gravity_z; 
- #endif
-#endif
-
-#ifdef LAGRANGE_ADDEDMASS
-  /* With Added mass */ 
-   if((tracer+ipart)->beta_coeff != 0.0){
-
-#ifdef LAGRANGE_GRAVITY
-  /*  add also: -\beta*g to acceleration */ 
- #ifdef LAGRANGE_GRAVITY_VARIABLE
-     (tracer+ipart)->ax -= (  - (tracer+ipart)->beta_coeff )*(tracer+ipart)->gravity_coeff*property.gravity_x;
-     (tracer+ipart)->ay -= (  - (tracer+ipart)->beta_coeff )*(tracer+ipart)->gravity_coeff*property.gravity_y;
-     (tracer+ipart)->az -= (  - (tracer+ipart)->beta_coeff )*(tracer+ipart)->gravity_coeff*property.gravity_z; 
- #else    
-     (tracer+ipart)->ax -= (  - (tracer+ipart)->beta_coeff )*property.gravity_x;
-     (tracer+ipart)->ay -= (  - (tracer+ipart)->beta_coeff )*property.gravity_y;
-     (tracer+ipart)->az -= (  - (tracer+ipart)->beta_coeff )*property.gravity_z; 
- #endif    
-#endif
-
-  if(itime==0 && resume==0){ 
-    (tracer+ipart)->ux_old = (tracer+ipart)->ux;
-    (tracer+ipart)->uy_old = (tracer+ipart)->uy;
-    (tracer+ipart)->uz_old = (tracer+ipart)->uz;
-  }
-
-   /* Here I will write the computation of the fluid material derivative */
-   Dt_u.x = ((tracer+ipart)->ux - (tracer+ipart)->ux_old )/property.time_dt
-          + ((tracer+ipart)->ux - (tracer+ipart)->vx)*(tracer+ipart)->dx_ux 
-          + ((tracer+ipart)->uy - (tracer+ipart)->vy)*(tracer+ipart)->dy_ux 
-          + ((tracer+ipart)->uz - (tracer+ipart)->vz)*(tracer+ipart)->dz_ux;
-
-   Dt_u.y = ((tracer+ipart)->uy - (tracer+ipart)->uy_old )/property.time_dt
-          + ((tracer+ipart)->ux - (tracer+ipart)->vx)*(tracer+ipart)->dx_uy 
-          + ((tracer+ipart)->uy - (tracer+ipart)->vy)*(tracer+ipart)->dy_uy 
-          + ((tracer+ipart)->uz - (tracer+ipart)->vz)*(tracer+ipart)->dz_uy;
-
-   Dt_u.z = ((tracer+ipart)->uz - (tracer+ipart)->uz_old )/property.time_dt         
-	  + ((tracer+ipart)->ux - (tracer+ipart)->vx)*(tracer+ipart)->dx_uz 
-          + ((tracer+ipart)->uy - (tracer+ipart)->vy)*(tracer+ipart)->dy_uz 
-          + ((tracer+ipart)->uz - (tracer+ipart)->vz)*(tracer+ipart)->dz_uz;
-
-   (tracer+ipart)->ax += Dt_u.x*(tracer+ipart)->beta_coeff;
-   (tracer+ipart)->ay += Dt_u.y*(tracer+ipart)->beta_coeff;
-   (tracer+ipart)->az += Dt_u.z*(tracer+ipart)->beta_coeff;
-
-
- #ifdef LAGRANGE_ADDEDMASS_LIFT
-   /* Here we add the Lift force */
-
-   /* compute vorticity vector : omega = nabla x u */
-   omega.x =  (tracer+ipart)->dy_uz  - (tracer+ipart)->dz_uy;
-   omega.y =  (tracer+ipart)->dz_ux  - (tracer+ipart)->dx_uz;
-   omega.z =  (tracer+ipart)->dx_uy  - (tracer+ipart)->dy_ux;
-   
-   /* lift force computation assuming lift coefficient CL = 1/2 */
-   /*  - beta/3 (u - v) x omega */
-   lift_coeff = ( (tracer+ipart)->beta_coeff )/3.0;
-
-   (tracer+ipart)->ax += -lift_coeff*( ((tracer+ipart)->uy - (tracer+ipart)->vy))*omega.z - ((tracer+ipart)->uz - (tracer+ipart)->vz))*omega.y );
-   (tracer+ipart)->ay += -lift_coeff*( ((tracer+ipart)->uz - (tracer+ipart)->vz))*omega.x - ((tracer+ipart)->ux - (tracer+ipart)->vx))*omega.z );
-   (tracer+ipart)->az += -lift_coeff*( ((tracer+ipart)->ux - (tracer+ipart)->vx))*omega.y - ((tracer+ipart)->uy - (tracer+ipart)->vy))*omega.x );
-
- #endif /* end of lift */
-
-   }/* end of if on addedd mass */
-#endif
-
-   if(itime==0 && resume==0){
-     (tracer+ipart)->vx += property.time_dt*(tracer+ipart)->ax;
-     (tracer+ipart)->vy += property.time_dt*(tracer+ipart)->ay;
-     (tracer+ipart)->vz += property.time_dt*(tracer+ipart)->az;
-   }else{
-     (tracer+ipart)->vx += property.time_dt*0.5*(3.0*(tracer+ipart)->ax - (tracer+ipart)->ax_old);
-     (tracer+ipart)->vy += property.time_dt*0.5*(3.0*(tracer+ipart)->ay - (tracer+ipart)->ay_old);
-     (tracer+ipart)->vz += property.time_dt*0.5*(3.0*(tracer+ipart)->az - (tracer+ipart)->az_old);
-   }
-
-   (tracer+ipart)->ax_old = (tracer+ipart)->ax; 
-   (tracer+ipart)->ay_old = (tracer+ipart)->ay; 
-   (tracer+ipart)->az_old = (tracer+ipart)->az; 
-
-   if(itime==0 && resume==0){
-     (tracer+ipart)->x += property.time_dt*(tracer+ipart)->vx; 
-     (tracer+ipart)->y += property.time_dt*(tracer+ipart)->vy;
-     (tracer+ipart)->z += property.time_dt*(tracer+ipart)->vz;
-   }else{
-     (tracer+ipart)->x += property.time_dt*0.5*(3.0*(tracer+ipart)->vx - (tracer+ipart)->vx_old);
-     (tracer+ipart)->y += property.time_dt*0.5*(3.0*(tracer+ipart)->vy - (tracer+ipart)->vy_old);
-     (tracer+ipart)->z += property.time_dt*0.5*(3.0*(tracer+ipart)->vz - (tracer+ipart)->vz_old);
-   }
-   (tracer+ipart)->vx_old = (tracer+ipart)->vx; 
-   (tracer+ipart)->vy_old = (tracer+ipart)->vy; 
-   (tracer+ipart)->vz_old = (tracer+ipart)->vz; 
-
-   (tracer+ipart)->ux_old = (tracer+ipart)->ux; 
-   (tracer+ipart)->uy_old = (tracer+ipart)->uy; 
-   (tracer+ipart)->uz_old = (tracer+ipart)->uz;
- 
-   }/* end of if on tau_drag different from zero */
-
-#ifdef LAGRANGE_ORIENTATION
-
-	      /* assign P vector */
-     vecP[0] = (tracer+ipart)->px;
-     vecP[1] = (tracer+ipart)->py;
-     vecP[2] = (tracer+ipart)->pz;
-              /* assign the last dP /dt  vector */
-     vecFold[0] = (tracer+ipart)->dt_px;
-     vecFold[1] = (tracer+ipart)->dt_py;
-     vecFold[2] = (tracer+ipart)->dt_pz;
-
- #ifdef LAGRANGE_ORIENTATION_SECONDORIENTATION
-	      /* assign N normal vector */
-     vecN[0] = (tracer+ipart)->nx;
-     vecN[1] = (tracer+ipart)->ny;
-     vecN[2] = (tracer+ipart)->nz;
-              /* assign the last dN /dt  vector */
-     vecFNold[0] = (tracer+ipart)->dt_nx;
-     vecFNold[1] = (tracer+ipart)->dt_ny;
-     vecFNold[2] = (tracer+ipart)->dt_nz;
- #endif
-
- #ifdef LAGRANGE_ORIENTATION_JEFFREY
  /* Here we implement Jeffrey equation */
 
               /* aspect ratio factor */
@@ -2960,8 +2964,8 @@ theta = 2 * acos(q0) ;
  }
 
  #endif
-
- #endif /*LAGRANGE_ORIENTATION_JEFFREY */
+  #endif
+ #endif /*LAGRANGE_ORIENTATION_JEFFREY */ 
  #ifdef LAGRANGE_ORIENTATION_DIFFUSION
 	     vec_xi[0] =  random_gauss(0.0,1.0);
 	     vec_xi[1] =  random_gauss(0.0,1.0);
