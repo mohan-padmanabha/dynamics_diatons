@@ -3036,7 +3036,7 @@ theta = 2 * acos(q0) ;
      (tracer+ipart)->dt_ny = vecFNold[1];
      (tracer+ipart)->dt_nz = vecFNold[2];
   #endif
-     
+
 #endif /* end of lagrange orientation */
 
    /* In case of BC we use elastic bouncing rule for the particle */

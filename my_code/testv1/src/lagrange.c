@@ -2100,13 +2100,18 @@ void move_particles(){
 /* --------------------------------------------------------------------------------------------------------------*/
 /* testing the code by entring the variable for orientation and rotation using rotation */
   #ifdef LAGRANGE_ORIENTATION_TRANSLATION
-      /* translation */
+ 
+
+     /* translation */
     my_double q0, q1, q2, q3;
     my_double matR[3][3], matK[3][3], matKT[3][3];
-    my_double aspr, mp, a, rhop, mu, pi;
+    my_double aspr, mp, a, rhop, mu, pi, theta_ang;
     my_double k_tranx, k_trany, k_tranz;
     my_double fx, fy, fz;
     my_double v12x, v12y, v12z;
+    pi = 3.1415;
+    rhop = 1.1;
+    theta_ang = 0;
 
 /* orinetation */
     my_double I_xx, I_yy, I_zz;
@@ -2119,6 +2124,14 @@ void move_particles(){
     my_double dq0dt, dq1dt, dq2dt, dq3dt;
     my_double qsq, invq, inv, r;
     int l, m, k;
+
+
+
+
+
+
+
+
  #endif
 
 
@@ -2381,21 +2394,6 @@ void move_particles(){
 
 
 
-/* --------------------------------------------------------------------------------------------------------------*/
-/* inserting the program for translation and rotation using quaternions */ 
-/* --------------------------------------------------------------------------------------------------------------*/
-
-
-
-
-
-
-
-
-
-
-
-
 #ifdef LAGRANGE_GRAVITY /* note that works only if LB_FORCING_GRAVITY is defined */
    /*  add: -g to acceleration */ 
  #ifdef LAGRANGE_GRAVITY_VARIABLE
@@ -2531,14 +2529,44 @@ void move_particles(){
 
  #ifdef LAGRANGE_ORIENTATION_JEFFREY
 
+
+
+/* --------------------------------------------------------------------------------------------------------------*/
+/* inserting the program for translation and rotation using quaternions */ 
+/* --------------------------------------------------------------------------------------------------------------*/
+
+
+
    #ifdef LAGRANGE_ORIENTATION_TRANSLATION
 
-/* conversion from axis angles to quaternions */
-//(tracer+ipart)->qt1 = (tracer+ipart)->px * sin(theta/2);
-//(tracer+ipart)->qt2 = (tracer+ipart)->py * sin(theta/2);
-//(tracer+ipart)->qt3 = (tracer+ipart)->pz * sin(theta/2);
-//(tracer+ipart)->qt0 = cos(theta/2);
 
+ aspr = (tracer+ipart)->aspect_ratio ; 
+// mp is the mass of the particle (zhang et al 2001)
+    a = aspr*0.001;
+
+    mp = 4/3*3.1415*pow(a,3)*aspr*rhop ;
+
+   /* computation of constants alpha0 beta0 and gamma0 to compute torque */
+
+    alpha0 = ((aspr*aspr)/((aspr*aspr) - 1)) + aspr/(2*pow(((aspr*aspr)-1),3/2)* log((aspr - sqrt((aspr*aspr) - 1))/(aspr + sqrt((aspr*aspr)-1))));
+    beta0 = alpha0 ;
+    gamma0 = - (2/((aspr*aspr) - 1)) - aspr/(pow(((aspr*aspr)-1),3/2)* log((aspr - sqrt((aspr*aspr) - 1))/(aspr + sqrt((aspr*aspr)-1))));
+
+
+
+
+    /* resistance tensor */
+    matK[0][0] = (16*pi*a*pow((aspr*aspr - 1),3/2))/((2*aspr - 3)*log(aspr+pow((aspr*aspr-1),1/2)) + aspr*pow((aspr*aspr-1),1/2));
+
+    matK[1][1] = matK[0][0];
+
+    matK[2][2] = (8*pi*a*pow((aspr*aspr - 1),3/2))/((2*aspr - 1)*log(aspr+pow((aspr*aspr-1),1/2)) + aspr*pow((aspr*aspr-1),1/2));
+
+
+    /* moment of inertia (diagnal in body frame)*/
+    I_xx = ((1+(aspr*aspr))*(a*a)*mp)/(5) ;
+    I_yy = I_xx ;
+    I_zz = (2*a*a*mp)/(5) ;
 
 
     /* assigning to the local variable */
@@ -2548,28 +2576,25 @@ void move_particles(){
     q3 = (tracer+ipart)->qt3;
 
 
-     /* rotation matrix of quaternions */
-    matR[0][0] = 1-2*(q2*q2+q3*q3);  matR[1][0] = 2*(q1*q2-q0*q3);   matR[2][0] = 2*(q1*q3+q0*q2); 
-    matR[0][1] = 2*(q1*q2+q0*q3);   matR[1][1] = 1-2*(q1*q1+q3*q3);  matR[2][1] = 2*(q2*q3-q0*q1);
-    matR[0][2] = 2*(q1*q3-q0*q2);   matR[1][2] = 2*(q2*q3+q0*q1);   matR[2][2] = 1-2*(q1*q1+q2*q2);  
+  printf("alpha0=%e  gamma0=%e  aspr=%e  mp=%e  I_xx=%e  I_yy=%e  I_yy=%e\n", alpha0, gamma0, aspr, mp, I_xx, I_yy, I_zz);
+
+
+  printf("q0=%e \t q1=%e \t q2=%e  q3=%e\n", q0, q1, q2, q3);
+
+
+      /* rotation matrix of quaternions */
+    matR[0][0] = (q0*q0)+(q1*q1)-(q2*q2)-(q3*q3);  matR[1][0] = 2*(q1*q2+q0*q3);   matR[2][0] = 2*(q1*q3-q0*q2); 
+    matR[0][1] = 2*(q1*q2-q0*q3);   matR[1][1] = (q0*q0)-(q1*q1)+(q2*q2)-(q3*q3);  matR[2][1] = 2*(q2*q3+q0*q1);
+    matR[0][2] = 2*(q1*q3+q0*q2);   matR[1][2] = 2*(q2*q3-q0*q1);   matR[2][2] = (q0*q0)-(q1*q1)-(q2*q2)+(q3*q3);    
  
      
 
  // aspect ratio is major axis / minor axis
  // already present in the code 
 //    (tracer+ipart)->aspect_ratio = b/a ;
-  aspr = (tracer+ipart)->aspect_ratio ; 
-// mp is the mass of the particle (zhang et al 2001)
-    a = aspr;
-    mp = 4/3*3.1415*pow(a,3)*aspr*rhop ;
+ 
 
-    matK[0][0] = (16*3.1415*a*pow((aspr*aspr - 1),3/2))/((2*aspr*aspr - 3)*log(aspr+pow((aspr*aspr-1),1/2)) + aspr*pow((aspr*aspr-1),1/2));
-
-    matK[1][1] = matK[0][0];
-
-    matK[2][2] = (8*31415*a*pow((aspr*aspr - 1),3/2))/((2*aspr*aspr - 1)*log(aspr+pow((aspr*aspr-1),1/2)) + aspr*pow((aspr*aspr-1),1/2));
-
-
+printf("kx=%e \t ky=%e \t kz=%e", matK[0][0], matK[1][1], matK[2][2]);
 
 /* translation dyadic or resistance tensor */
 
@@ -2635,12 +2660,6 @@ void move_particles(){
 
 
 
-    /* moment of inertia (diagnal in body frame)*/
-    I_xx = ((1+(aspr*aspr))*(a*a)*mp)/(5) ;
-    I_yy = I_xx ;
-    I_zz = (2*a*a*mp)/(5) ;
-
-
     /* velocity gradient matrix */
     matD[0][0]=(tracer+ipart)->dx_ux ; matD[0][1]=(tracer+ipart)->dy_ux; matD[0][2]=(tracer+ipart)->dz_ux;
     matD[1][0]=(tracer+ipart)->dx_uy ; matD[1][1]=(tracer+ipart)->dy_uy; matD[1][2]=(tracer+ipart)->dz_uy;
@@ -2675,12 +2694,6 @@ void move_particles(){
             for (l=0; l<3; l++){
                 matWB[k][l] = 0.5*(matDT[k][l]+matDT[l][k]);
                }
-
-    /* computation of constants alpha0 beta0 and gamma0 to compute torque */
-
-    alpha0 = ((aspr*aspr)/((aspr*aspr) - 1)) + aspr/(2*pow(((aspr*aspr)-1),3/2)* log((aspr - sqrt((aspr*aspr) - 1))/(aspr + sqrt((aspr*aspr)-1))));
-    beta0 = alpha0 ;
-    gamma0 = - (2/((aspr*aspr) - 1)) - aspr/(pow(((aspr*aspr)-1),3/2)* log((aspr - sqrt((aspr*aspr) - 1))/(aspr + sqrt((aspr*aspr)-1))));
 
 
     /* computation of torque using the values computed */
@@ -2757,9 +2770,10 @@ void move_particles(){
 
 
      /* rotation matrix of quaternions */
-    matR[0][0] = 1-2*(q2*q2+q3*q3);  matR[1][0] = 2*(q1*q2-q0*q3);   matR[2][0] = 2*(q1*q3+q0*q2); 
-    matR[0][1] = 2*(q1*q2+q0*q3);   matR[1][1] = 1-2*(q1*q1+q3*q3);  matR[2][1] = 2*(q2*q3-q0*q1);
-    matR[0][2] = 2*(q1*q3-q0*q2);   matR[1][2] = 2*(q2*q3+q0*q1);   matR[2][2] = 1-2*(q1*q1+q2*q2);  
+     /* rotation matrix of quaternions */
+    matR[0][0] = (q0*q0)+(q1*q1)-(q2*q2)-(q3*q3);  matR[1][0] = 2*(q1*q2+q0*q3);   matR[2][0] = 2*(q1*q3-q0*q2); 
+    matR[0][1] = 2*(q1*q2-q0*q3);   matR[1][1] = (q0*q0)-(q1*q1)+(q2*q2)-(q3*q3);  matR[2][1] = 2*(q2*q3+q0*q1);
+    matR[0][2] = 2*(q1*q3+q0*q2);   matR[1][2] = 2*(q2*q3-q0*q1);   matR[2][2] = (q0*q0)-(q1*q1)-(q2*q2)+(q3*q3);   
 
 
     /* multiplication matrix of quaternions to advance in time */
@@ -2772,7 +2786,6 @@ void move_particles(){
     obx = matR[0][0] * (tracer+ipart)->ox + matR[0][1] * (tracer+ipart)->oy + matR[0][2] * (tracer+ipart)->oz;
     oby = matR[1][0] * (tracer+ipart)->ox + matR[1][1] * (tracer+ipart)->oy + matR[1][2] * (tracer+ipart)->oz;
     obz = matR[2][0] * (tracer+ipart)->ox + matR[2][1] * (tracer+ipart)->oy + matR[2][2] * (tracer+ipart)->oz;
-
 
 
    /* Now compute dq/dt = 0.5* B*(0,obx,oby,obz) , this is just a guess of dq/dt(t+0.5*time_dt) */
@@ -2806,10 +2819,10 @@ void move_particles(){
 
 
 /* conversion from quaternions to axis angles */
-theta = 2 * acos(q0) ;
-(tracer+ipart)->px = q1 / sqrt(1-q0*q0) ;
-(tracer+ipart)->py = q2 / sqrt(1-q0*q0) ;
-(tracer+ipart)->pz = q3 / sqrt(1-q0*q0) ;
+// theta = 2 * acos(q0) ;
+// (tracer+ipart)->px = q1 / sqrt(1-q0*q0) ;
+// (tracer+ipart)->py = q2 / sqrt(1-q0*q0) ;
+// (tracer+ipart)->pz = q3 / sqrt(1-q0*q0) ;
 
 
    /* assigning the values back to variables */  
@@ -2817,6 +2830,7 @@ theta = 2 * acos(q0) ;
     (tracer+ipart)->qt1 = q1;
     (tracer+ipart)->qt2 = q2;
     (tracer+ipart)->qt3 = q3;
+
 
 #else
 
@@ -3032,7 +3046,8 @@ theta = 2 * acos(q0) ;
      (tracer+ipart)->dt_ny = vecFNold[1];
      (tracer+ipart)->dt_nz = vecFNold[2];
   #endif
-     
+       printf("vx=%e \t vy=%e \t vz=%e \n", (tracer+ipart)->vx, (tracer+ipart)->vy, (tracer+ipart)->vz );
+ printf("x=%e \t y=%e \t z=%e \n", (tracer+ipart)->x, (tracer+ipart)->y, (tracer+ipart)->z );
 #endif /* end of lagrange orientation */
 
    /* In case of BC we use elastic bouncing rule for the particle */
@@ -3262,11 +3277,11 @@ if(  part.x >= mesh[IDXG(BRD, BRD, BRD)].x && part.x < mesh[IDXG(LNXG+BRD-1,BRD,
 #ifdef LAGRANGE_DEBUG
        if(itime%10==0 && ROOT)fprintf(stderr,"------------------ Check npart = %d\n",all_npart);
 #endif
-       if(all_npart != (int)property.particle_number){
-         if(ROOT) fprintf(stderr,"Total number of particles has changed during run!!!!\n Was %d now is %d\n Exit.\n",(int)property.particle_number, all_npart);
-         MPI_Finalize();
-         exit(0);
-       }
+//       if(all_npart != (int)property.particle_number){
+//         if(ROOT) fprintf(stderr,"Total number of particles has changed during run!!!!\n Was %d now is %d\n Exit.\n",(int)property.particle_number, all_npart);
+//         MPI_Finalize();
+//         exit(0);
+//       }
 
  
 

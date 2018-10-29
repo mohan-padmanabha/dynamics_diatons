@@ -66,10 +66,10 @@ phi = two_pi*myrand();
    double z = 1;
 
    double uz = 0;
-   double du_dx = 1;
+   // double du_dx = 1;
    double x_max = 5;
    double y_max = 5;
-   int itr = 100;
+   int itr = 1000;
    double px = 0;
    double py = 0;
    double pz = 0;
@@ -88,8 +88,8 @@ phi = two_pi*myrand();
    oy_old = 0.0;
    oz_old = 0.0;
 
-    double dx_ux = 0 ; double dy_ux = 2 ; double dz_ux = 0;
-    double dx_uy = 0 ; double dy_uy = 0 ; double dz_uy = 0;
+    double dx_ux = 0 ; double dy_ux = 1e-6 ; double dz_ux = 0;
+    double dx_uy = 1e-6 ; double dy_uy = 0; double dz_uy = 0;
     double dx_uz = 0 ; double dy_uz = 0 ; double dz_uz = 0;
 /* conversion from axis angles to quaternions */
    
@@ -265,14 +265,14 @@ for(i=0; i < itr ; i++){
 
 	for (k=0; k<3; k++)
             for (l=0; l<3; l++){
-                matWB[k][l] = 0.5*(matDT[k][l]+matDT[l][k]);
+                matWB[k][l] = 0.5*(matDT[k][l]-matDT[l][k]);
                }
 
 
 
     /* computation of torque using the values computed */
 
-    T_x = (16*pi*nu*pow(a,3)*aspr)/(3*(beta0 + (aspr*aspr)*gamma0)) * ((1-(aspr*aspr)) * matSB[2][1] + (1+ (aspr*aspr)) * ( matWB[1][2] -  ox)) ;
+    T_x = (16*pi*nu*pow(a,3)*aspr)/(3*(beta0 + (aspr*aspr)*gamma0)) * ((1-(aspr*aspr)) * matSB[2][1] + (1+ (aspr*aspr)) * ( matWB[2][1] -  ox)) ;
 
     T_y = (16*pi*nu*pow(a,3)*aspr)/(3*((aspr*aspr)*gamma0 + alpha0))*(((aspr*aspr) - 1) * matSB[0][2] + ((aspr*aspr)+1) * ( matWB[0][2] -  oy)) ;
 
