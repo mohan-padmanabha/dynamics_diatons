@@ -9,7 +9,7 @@ SY 50
 SZ 1
 time_dt 1
 time_start 0
-time_end 500
+time_end 50
 time_dump_field 100
 time_dump_diagn 100
 time_dump_lagr 100

@@ -2856,6 +2856,7 @@ theta = 2 * acos(q0) ;
                 for (j=0; j<3; j++){
                   matS[i][j] *= f_alpha;
 		}
+                     printf("ox=%e \t oy=%e \t oz=%e", (tracer+ipart)->ox, (tracer+ipart)->oy, (tracer+ipart)->oz);
 
   #ifdef LAGRANGE_ORIENTATION_JEFFREY_GYROTAXIS
 	       /* gravitational gyrotaxis : the stretched S matrix has an extra term -1/(2*v0) * g_i p_j      */	      

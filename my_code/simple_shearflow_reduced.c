@@ -80,9 +80,9 @@ phi = two_pi*myrand();
    vy_old = 0.0;
    vz_old = 0.0;
 
-   ox = 0.0;
-   oy = 0.0;
-   oz = 0.0;
+   ox = 0.1;
+   oy = 0.1;
+   oz = 0.1;
 
    ox_old = 0.0;
    oy_old = 0.0;
@@ -135,8 +135,6 @@ phi = two_pi*myrand();
     gamma0 = - (2/((aspr*aspr) - 1)) - aspr/(pow(((aspr*aspr)-1),3/2)* log((aspr - sqrt((aspr*aspr) - 1))/(aspr + sqrt((aspr*aspr)-1))));
 
 for(i=0; i < itr ; i++){
-
-
 
     uy = dy_ux * y;
     ux = uy;
@@ -396,6 +394,11 @@ for(i=0; i < itr ; i++){
      oy = 0.5 * (o12y + 3* oy);
      oz = 0.5 * (o12z + 3* oz);
 
+//     ox = 0.5 * (o12x + ox);
+//     oy = 0.5 * (o12y + oy);
+//     oz = 0.5 * (o12z + oz);
+
+
 
 /* conversion from quaternions to axis angles */
 // theta = 2 * acos(q0) ;
@@ -415,11 +418,11 @@ for(i=0; i < itr ; i++){
  printf("mp = %e\t KT = %e\t uy = %e\t fy = %e\t vy = %e\t y = %e\t iyy = %e\t ty = %e\t oy = %e\n", mp, matKT[1][1], uy, fy, vy, y, I_yy, T_y, oy); 
  printf("mp = %e\t KT = %e\t uz = %e\t fz = %e\t vz = %e\t z = %e\t izz = %e\t tz = %e\t oz = %e\n", mp, matKT[2][2], uz, fz, vz, z, I_zz, T_z, oz); 
 fprintf(qdata, "%e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\n", q0, q1, q2, q3, px, py, pz, x, y, z);
-fprintf(vdata, "%e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t  %e\t %e\t %e\n", ox, oy, oz, vx, vy, vz, x, y, z, fx, fy, fz, T_x, T_y, T_z);
+fprintf(vdata, "%e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t  %e\t %e\t %e\n",i, ox, oy, oz, vx, vy, vz, x, y, z, fx, fy, fz, T_x, T_y, T_z);
 
- if(x > 5) x = 0;
- if(y > 5) y = 0;
- if(z > 5) z = 0;
+// if(x > 5) x = 0;
+// if(y > 5) y = 0;
+// if(z > 5) z = 0;
 
 }
 

@@ -69,7 +69,7 @@ phi = two_pi*myrand();
    double du_dx = 1;
    double x_max = 5;
    double y_max = 5;
-   int itr = 10000;
+   int itr = 100;
    double px = 0;
    double py = 0;
    double pz = 0;
@@ -80,16 +80,16 @@ phi = two_pi*myrand();
    vy_old = 0.0;
    vz_old = 0.0;
 
-   ox = 0.0;
-   oy = 0.0;
-   oz = 0.0;
+   ox = 1.0;
+   oy = 1.0;
+   oz = 1.0;
 
    ox_old = 0.0;
    oy_old = 0.0;
    oz_old = 0.0;
 
-    double dx_ux = 0 ; double dy_ux = 2 ; double dz_ux = 0;
-    double dx_uy = 2 ; double dy_uy = 0 ; double dz_uy = 0;
+    double dx_ux = 0 ; double dy_ux = 0.02 ; double dz_ux = 0;
+    double dx_uy = 0.02 ; double dy_uy = 0 ; double dz_uy = 0;
     double dx_uz = 0 ; double dy_uz = 0 ; double dz_uz = 0;
 /* conversion from axis angles to quaternions */
    
@@ -133,17 +133,17 @@ phi = two_pi*myrand();
     alpha0 = ((aspr*aspr)/((aspr*aspr) - 1)) + aspr/(2*pow(((aspr*aspr)-1),3/2)* log((aspr - sqrt((aspr*aspr) - 1))/(aspr + sqrt((aspr*aspr)-1))));
     beta0 = alpha0 ;
     gamma0 = - (2/((aspr*aspr) - 1)) - aspr/(pow(((aspr*aspr)-1),3/2)* log((aspr - sqrt((aspr*aspr) - 1))/(aspr + sqrt((aspr*aspr)-1))));
+    
+     printf("alpha0=%e\t gamma0=%e\t beta0=%e\n", alpha0, gamma0, beta0);    
 
 for(i=0; i < itr ; i++){
-
-
 
     uy = dy_ux * y;
     ux = uy;
      /* rotation matrix of quaternions */
     matR[0][0] = 1-2*(q2*q2+q3*q3);  matR[1][0] = 2*(q1*q2-q0*q3);   matR[2][0] = 2*(q1*q3+q0*q2); 
     matR[0][1] = 2*(q1*q2+q0*q3);   matR[1][1] = 1-2*(q1*q1+q3*q3);  matR[2][1] = 2*(q2*q3-q0*q1);
-    matR[0][2] = 2*(q1*q3-q0*q2);   matR[1][2] = 2*(q2*q3+q0*q1);   matR[2][2] = 1-2*(q1*q1+q2*q2);  
+    matR[0][2] = 2*(q1*q3-q0*q2);   matR[1][2] = 2*(q2*q3+q0*q1);   matR[2][2] = 1-2*(q1*q1+q2*q2);    
    
      printf("matR %e %e %e %e \n", matR[0][0], matR[0][1], matR[0][2], matR[1][0]);
      
@@ -259,7 +259,7 @@ for(i=0; i < itr ; i++){
 
     /* computation of torque using the values computed */
 
-    T_x = (16*pi*nu*pow(a,3)*aspr)/(3*(beta0 + (aspr*aspr)*gamma0)) * ((1-(aspr*aspr)) * matSB[2][1] + (1+ (aspr*aspr)) * ( matWB[1][2] -  ox)) ;
+    T_x = (16*pi*nu*pow(a,3)*aspr)/(3*(beta0 + (aspr*aspr)*gamma0)) * ((1-(aspr*aspr)) * matSB[2][1] + (1+ (aspr*aspr)) * ( matWB[2][1] -  ox)) ;
 
     T_y = (16*pi*nu*pow(a,3)*aspr)/(3*((aspr*aspr)*gamma0 + alpha0))*(((aspr*aspr) - 1) * matSB[0][2] + ((aspr*aspr)+1) * ( matWB[0][2] -  oy)) ;
 
@@ -333,7 +333,7 @@ for(i=0; i < itr ; i++){
      /* rotation matrix of quaternions */
     matR[0][0] = 1-2*(q2*q2+q3*q3);  matR[1][0] = 2*(q1*q2-q0*q3);   matR[2][0] = 2*(q1*q3+q0*q2); 
     matR[0][1] = 2*(q1*q2+q0*q3);   matR[1][1] = 1-2*(q1*q1+q3*q3);  matR[2][1] = 2*(q2*q3-q0*q1);
-    matR[0][2] = 2*(q1*q3-q0*q2);   matR[1][2] = 2*(q2*q3+q0*q1);   matR[2][2] = 1-2*(q1*q1+q2*q2);  
+    matR[0][2] = 2*(q1*q3-q0*q2);   matR[1][2] = 2*(q2*q3+q0*q1);   matR[2][2] = 1-2*(q1*q1+q2*q2); 
 
 
     /* multiplication matrix of quaternions to advance in time */
@@ -367,7 +367,7 @@ for(i=0; i < itr ; i++){
     
     invq = 1.0/ sqrt(qsq);
 
-    q0 *= invq;
+    q0 *= invq;	
     q1 *= invq;
     q2 *= invq;
     q3 *= invq;
@@ -393,9 +393,9 @@ for(i=0; i < itr ; i++){
 
 
  printf("q0=%e q1=%e q2=%e q3=%e \n", q0, q1, q2, q3);
- printf("mp = %e\t KT = %e\t ux = %e\t fx = %e\t vx = %e\t x = %e\t ixx = %e\t tx = %e\t ox = %e\n", mp, matKT[0][0], ux, fx, vx, x, I_xx, T_x, ox); 
- printf("mp = %e\t KT = %e\t uy = %e\t fy = %e\t vy = %e\t y = %e\t iyy = %e\t ty = %e\t oy = %e\n", mp, matKT[1][1], uy, fy, vy, y, I_yy, T_y, oy); 
- printf("mp = %e\t KT = %e\t uz = %e\t fz = %e\t vz = %e\t z = %e\t izz = %e\t tz = %e\t oz = %e\n", mp, matKT[2][2], uz, fz, vz, z, I_zz, T_z, oz); 
+ printf("mp = %e\t KT = %e\t ux = %e\t fx = %e\t vx = %e\t x = %e\t ixx = %e\t tx = %e\t ox = %e\t dox=%e\n", mp, matKT[0][0], ux, fx, vx, x, I_xx, T_x, ox, do_x); 
+ printf("mp = %e\t KT = %e\t uy = %e\t fy = %e\t vy = %e\t y = %e\t iyy = %e\t ty = %e\t oy = %e\t doy=%e\n", mp, matKT[1][1], uy, fy, vy, y, I_yy, T_y, oy, do_y); 
+ printf("mp = %e\t KT = %e\t uz = %e\t fz = %e\t vz = %e\t z = %e\t izz = %e\t tz = %e\t oz = %e\t dt=%e doz=%e\n", mp, matKT[2][2], uz, fz, vz, z, I_zz, T_z, oz, do_z, time_dt); 
 fprintf(qdata, "%e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\n", q0, q1, q2, q3, px, py, pz, x, y, z);
 fprintf(vdata, "%e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t  %e\t %e\t %e\n", ox, oy, oz, vx, vy, vz, x, y, z, fx, fy, fz, T_x, T_y, T_z);
 
