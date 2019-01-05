@@ -30,7 +30,7 @@ int main() {
     int l, m, k, i;
     double qt0, qt1, qt2, qt3;
     double ox,oy,oz;
-
+    double o2x, o2y, o2z;
     double dlo_x, dlo_y, dlo_z;
 
 
@@ -198,6 +198,13 @@ for(i=0; i < itr ; i++){
     matD[0][0]= dx_ux ; matD[0][1]= dy_ux; matD[0][2]= dz_ux;
     matD[1][0]= dx_uy ; matD[1][1]= dy_uy; matD[1][2]= dz_uy;
     matD[2][0]= dx_uz ; matD[2][1]= dy_uz; matD[2][2]= dz_uz;	 
+    
+    
+    
+    /* transformation: From angular momentum in the lab frame to body frame */
+    obx = matR[0][0] * ox + matR[0][1] * oy + matR[0][2] * oz;
+    oby = matR[1][0] * ox + matR[1][1] * oy + matR[1][2] * oz;
+    obz = matR[2][0] * ox + matR[2][1] * oy + matR[2][2] * oz;
 
     /* For transformation of co-ordinates from Lab frome to body frame for tensor */
 
@@ -237,31 +244,29 @@ for(i=0; i < itr ; i++){
 
     /* computation of torque using the values computed */
 
-    T_x = (16*pi*nu*pow(a,3)*aspr)/(3*(beta0 + (aspr*aspr)*gamma0)) * ((1-(aspr*aspr)) * matSB[2][1] + (1+ (aspr*aspr)) * ( matWB[2][1] -  ox)) ;
+    T_x = (16*pi*nu*pow(a,3)*aspr)/(3*(beta0 + (aspr*aspr)*gamma0)) * ((1-(aspr*aspr)) * matSB[2][1] + (1+ (aspr*aspr)) * ( matWB[2][1] -  obx)) ;
 
-    T_y = (16*pi*nu*pow(a,3)*aspr)/(3*((aspr*aspr)*gamma0 + alpha0))*(((aspr*aspr) - 1) * matSB[0][2] + ((aspr*aspr)+1) * ( matWB[0][2] -  oy)) ;
+    T_y = (16*pi*nu*pow(a,3)*aspr)/(3*((aspr*aspr)*gamma0 + alpha0))*(((aspr*aspr) - 1) * matSB[0][2] + ((aspr*aspr)+1) * ( matWB[0][2] -  oby)) ;
 
-    T_z = (32*pi*nu*pow(a,3)*aspr)/(3*(alpha0 + beta0))*( matWB[0][1] -  oz) ;
+    T_z = (32*pi*nu*pow(a,3)*aspr)/(3*(alpha0 + beta0))*( matWB[0][1] -  obz) ;
     
 
+    /* computing the deravative of angular momentum for computing the next time step */    
 
-    do_x = (T_x +  oy* oz*(I_yy - I_zz))/I_xx;
-    do_y = (T_y +  oz*  ox *(I_zz - I_xx))/I_yy;
+    do_x = (T_x +  oby* obz*(I_yy - I_zz))/I_xx;
+    do_y = (T_y +  obz*  obx *(I_zz - I_xx))/I_yy;
 
     /* I_xx = I_yy hence the equation is simplified */
     do_z = (T_z)/I_zz;
 
-    /* transformation: From angular momentum in the body frame to lab frame*/
-    dlo_x = matR[0][0] * do_x + matR[0][1] * do_y + matR[0][2] * do_z;
-    dlo_y = matR[1][0] * do_x + matR[1][1] * do_y + matR[1][2] * do_z;
-    dlo_z = matR[2][0] * do_x + matR[2][1] * do_y + matR[2][2] * do_z;
+    /* transformation: From angular momentum in the body frame to lab frame using do_x * R(transpose)  */
+    dlo_x = matR[0][0] * do_x + matR[1][0] * do_y + matR[2][0] * do_z;
+    dlo_y = matR[0][1] * do_x + matR[1][1] * do_y + matR[2][1] * do_z;
+    dlo_z = matR[0][2] * do_x + matR[1][2] * do_y + matR[2][2] * do_z;
 
     
 
-    /* transformation: From angular momentum in the lab frame to body frame */
-    obx = matR[0][0] * ox + matR[0][1] * oy + matR[0][2] * oz;
-    oby = matR[1][0] * ox + matR[1][1] * oy + matR[1][2] * oz;
-    obz = matR[2][0] * ox + matR[2][1] * oy + matR[2][2] * oz;
+
 
    /* Now compute dq/dt = 0.5* B*(0,obx,oby,obz) , this is just a guess of dq/dt(t) */
     dq0dt = 0.5 *  (B[0][1] * obx + B[0][2] * oby + B[0][3] * obz );
@@ -289,7 +294,11 @@ for(i=0; i < itr ; i++){
     q3 *= invq;
 
     
+    /* assigning values for computing later */
     
+    o2x = ox;
+    o2y = oy;
+    o2z = oz;
     
     /* estimating the value of omega at time t+dt/2  */
      ox += dlo_x *(time_dt*0.5);
@@ -297,7 +306,7 @@ for(i=0; i < itr ; i++){
      oz += dlo_z *(time_dt*0.5);
 
 
-     /* rotation matrix of quaternions */
+     /* rotation matrix of quaternions updated time step t + dt/2 */
     matR[0][0] = (q0*q0)+(q1*q1)-(q2*q2)-(q3*q3);  matR[1][0] = 2*(q1*q2+q0*q3);   matR[2][0] = 2*(q1*q3-q0*q2); 
     matR[0][1] = 2*(q1*q2-q0*q3);   matR[1][1] = (q0*q0)-(q1*q1)+(q2*q2)-(q3*q3);  matR[2][1] = 2*(q2*q3+q0*q1);
     matR[0][2] = 2*(q1*q3+q0*q2);   matR[1][2] = 2*(q2*q3-q0*q1);   matR[2][2] = (q0*q0)-(q1*q1)-(q2*q2)+(q3*q3); 
@@ -344,10 +353,10 @@ for(i=0; i < itr ; i++){
 
     
     
-     /* estimating the value of omega at time t+dt using euler  */
-     ox += dlo_x *(time_dt);
-     oy += dlo_y *(time_dt);
-     oz += dlo_z *(time_dt);   
+     /* estimating the value of omega at time t+dt using euler values at time t  */
+     ox = o2x + dlo_x *(time_dt);
+     oy = o2y + dlo_y *(time_dt);
+     oz = o2z + dlo_z *(time_dt);   
     
     
     /* extrapolation to predict the value of ox at time t+dt */
@@ -363,10 +372,6 @@ for(i=0; i < itr ; i++){
  py = q2 / sqrt(1-q0*q0) ;
  pz = q3 / sqrt(1-q0*q0) ;
 
- px = matR[0][0] ;
- py = matR[0][1] ;
- pz = matR[0][2] ;
-
 
 
 
@@ -374,8 +379,8 @@ for(i=0; i < itr ; i++){
  printf("mp = %e\t KT = %e\t ux = %e\t fx = %e\t vx = %e\t x = %e\t ixx = %e\t tx = %e\t ox = %e\n", mp, matKT[0][0], ux, fx, vx, x, I_xx, T_x, ox); 
  printf("mp = %e\t KT = %e\t uy = %e\t fy = %e\t vy = %e\t y = %e\t iyy = %e\t ty = %e\t oy = %e\n", mp, matKT[1][1], uy, fy, vy, y, I_yy, T_y, oy); 
  printf("mp = %e\t KT = %e\t uz = %e\t fz = %e\t vz = %e\t z = %e\t izz = %e\t tz = %e\t oz = %e\n", mp, matKT[2][2], uz, fz, vz, z, I_zz, T_z, oz); 
-fprintf(qdata, "%e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\n", q0, q1, q2, q3, px, py, pz, x, y, z);
-fprintf(vdata, "%e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t  %e\t %e\t %e\n", ox, oy, oz, vx, vy, vz, x, y, z, fx, fy, fz, T_x, T_y, T_z);
+ fprintf(qdata, "%e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\n", q0, q1, q2, q3, px, py, pz, x, y, z);
+ fprintf(vdata, "%e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t %e\t  %e\t %e\t %e\n", ox, oy, oz, vx, vy, vz, x, y, z, fx, fy, fz, T_x, T_y, T_z);
 
  if(x > 5) {x = 0;}
  if(y > 5) {y = 0;}
