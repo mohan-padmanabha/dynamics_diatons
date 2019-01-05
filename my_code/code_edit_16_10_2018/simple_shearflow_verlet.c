@@ -59,10 +59,10 @@ phi = two_pi*myrand();
    nu = 0.0000015 ;
    double bx = 0.001;
    rhop = 1.1;
-   time_dt = 0.0001;
+   time_dt = 0.1;
    a = aspr * bx ;
-   double x = 1;
-   double y = 1;
+   double x = 0;
+   double y = 0;
    double z = 0;
 
    double ux = 0;
@@ -71,27 +71,29 @@ phi = two_pi*myrand();
    // double du_dx = 1;
    double x_max = 5;
    double y_max = 5;
-   int itr = 1000;
+   int itr = 10000;
    double px = 0;
    double py = 0;
    double pz = 0;
-   vx = 0;
-   vy = 0;
-   vz = 0;
-   vx_old = 0.0;
-   vy_old = 0.0;
-   vz_old = 0.0;
 
-   ox = 1.0e-5;
-   oy = 1.0e-5;
+   vx = 0.001;
+   vy = 0.001;
+   vz = 0;
+
+//   vx_old = 0.001;
+//   vy_old = 0.001;
+//   vz_old = 0.0;
+
+   ox = 0.01;
+   oy = 0.01;
    oz = 0.0;
 
-   ox_old = 0.0;
-   oy_old = 0.0;
-   oz_old = 0.0;
+//   ox_old = 0.001;
+//   oy_old = 0.001;
+//   oz_old = 0.0;
 
-    double dx_ux = 0 ; double dy_ux = 1e-4 ; double dz_ux = 0;
-    double dx_uy = 1e-4 ; double dy_uy = 0; double dz_uy = 0;
+    double dx_ux = 0 ; double dy_ux = 1e-1 ; double dz_ux = 0;
+    double dx_uy = 1e-1 ; double dy_uy = 0; double dz_uy = 0;
     double dx_uz = 0 ; double dy_uz = 0 ; double dz_uz = 0;
 /* conversion from axis angles to quaternions */
    
@@ -213,15 +215,11 @@ for(i=0; i < itr ; i++){
      y += ( vy * time_dt);
      z += ( vz * time_dt);
  
- /* computing force for time n+1/2 to compute the velocity at time n+1 and assuming the fluid velocity is constant at at this step */
-    fx = (matKT[0][0]*(ux - vx) +  matKT[0][1]*(uy - vy) +  matKT[0][2]*(uz - vz))*nu; 
-    fy = (matKT[1][0]*(ux - vx) +  matKT[1][1]*(uy - vy) +  matKT[1][2]*(uz - vz))*nu;
-    fz = (matKT[2][0]*(ux - vx) +  matKT[2][1]*(uy - vy) +  matKT[2][2]*(uz - vz))*nu; 
 
 /* computing the velocity at time n+1 */
-     vx += (fx * (0.5*time_dt)) / mp;
-     vy += (fy * (0.5*time_dt)) / mp;
-     vz += (fz * (0.5*time_dt)) / mp;
+     vx += (fx * (time_dt)) / mp;
+     vy += (fy * (time_dt)) / mp;
+     vz += (fz * (time_dt)) / mp;
      
      
     /* to find the value of v  by extrapolation at time n +1 for next iteration */ 
@@ -229,6 +227,9 @@ for(i=0; i < itr ; i++){
 //     vy = 0.5 * (v12y + 3* vy);
 //     vz = 0.5 * (v12z + 3* vz);   
      printf("velocity =%e %e %e\n", vx, vy, vz);
+
+
+
      /* -------------------------------------------------------------------------*/
      /* orientation computation */
 
@@ -386,10 +387,11 @@ for(i=0; i < itr ; i++){
     dq2dt = 0.5 *  (B[2][1] * obx + B[2][2] * oby + B[2][3] * obz );
     dq3dt = 0.5 *  (B[3][1] * obx + B[3][2] * oby + B[3][3] * obz );
 
-    q0 += 0.5*time_dt*dq0dt;
-    q1 += 0.5*time_dt*dq1dt;
-    q2 += 0.5*time_dt*dq2dt;
-    q3 += 0.5*time_dt*dq3dt;
+    
+    q0 += time_dt*dq0dt;
+    q1 += time_dt*dq1dt;
+    q2 += time_dt*dq2dt;
+    q3 += time_dt*dq3dt;
 
 
     /* quaternion normalization */
@@ -405,25 +407,25 @@ for(i=0; i < itr ; i++){
 
 
     
-    
+     /* estimating the value of omega at time t+dt  */
+     ox += do_x *(time_dt);
+     oy += do_y *(time_dt);
+     oz += do_z *(time_dt);   
     
     
     /* extrapolation to predict the value of ox at time t+dt */
 
-     ox = 0.5 * (o12x + 3* ox);
-     oy = 0.5 * (o12y + 3* oy);
-     oz = 0.5 * (o12z + 3* oz);
+//     ox = 0.5 * (o12x + 3* ox);
+//     oy = 0.5 * (o12y + 3* oy);
+//     oz = 0.5 * (o12z + 3* oz);
 
 
 /* conversion from quaternions to axis angles */
-// theta = 2 * acos(q0) ;
-// px = q1 / sqrt(1-q0*q0) ;
-// py = q2 / sqrt(1-q0*q0) ;
-// pz = q3 / sqrt(1-q0*q0) ;
+ theta = 2 * acos(q0) ;
+ px = q1 / sqrt(1-q0*q0) ;
+ py = q2 / sqrt(1-q0*q0) ;
+ pz = q3 / sqrt(1-q0*q0) ;
 
- px = matR[0][0] ;
- py = matR[0][1] ;
- pz = matR[0][2] ;
 
 
 

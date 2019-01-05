@@ -13,7 +13,10 @@ int main() {
     double aspr, mp, a, rhop, mu, pi, nu, time_dt;
     double k_tranx, k_trany, k_tranz;
     double fx, fy, fz;
-    double v12x, v12y, v12z;
+    double vx,vy,vz;
+    double v2x, v2y, v2z;
+    double x, y, z;
+    double ux, uy, uz;
 
 /* orinetation */
     double I_xx, I_yy, I_zz;
@@ -21,18 +24,15 @@ int main() {
     double alpha0, beta0, gamma0, theta;
     double T_x, T_y, T_z;
     double do_x, do_y, do_z;
-    double o12x, o12y, o12z;
     double obx, oby, obz;
     double dq0dt, dq1dt, dq2dt, dq3dt;
     double qsq, invq, p, r;
     int l, m, k, i;
     double qt0, qt1, qt2, qt3;
     double ox,oy,oz;
-    double ox_old,oy_old,oz_old;
-    double vx,vy,vz;
-    double vx_old,vy_old,vz_old;
 
-    double u = 0;
+    double dlo_x, dlo_y, dlo_z;
+
 /* initial conditions */
 //#ifdef LAGRANGE_ORIENTATION
 /*
@@ -59,39 +59,34 @@ phi = two_pi*myrand();
    nu = 0.0000015 ;
    double bx = 0.001;
    rhop = 1.1;
-   time_dt = 0.0001;
+   time_dt = 0.1;
    a = aspr * bx ;
-   double x = 1;
-   double y = 1;
-   double z = 0;
+   x = 1;
+   y = 1;
+   z = 0;
 
-   double ux = 0;
-   double uy = 0;
-   double uz = 0;
+   ux = 0;
+   uy = 0;
+   uz = 0;
    // double du_dx = 1;
    double x_max = 5;
    double y_max = 5;
-   int itr = 1000;
+   int itr = 10000;
    double px = 0;
    double py = 0;
    double pz = 0;
+
    vx = 0;
    vy = 0;
    vz = 0;
-   vx_old = 0.0;
-   vy_old = 0.0;
-   vz_old = 0.0;
 
    ox = 1.0e-5;
    oy = 1.0e-5;
    oz = 0.0;
 
-   ox_old = 0.0;
-   oy_old = 0.0;
-   oz_old = 0.0;
 
-    double dx_ux = 0 ; double dy_ux = 1e-4 ; double dz_ux = 0;
-    double dx_uy = 1e-4 ; double dy_uy = 0; double dz_uy = 0;
+    double dx_ux = 0 ; double dy_ux = 1e-3 ; double dz_ux = 0;
+    double dx_uy = 0 ; double dy_uy = 0; double dz_uy = 0;
     double dx_uz = 0 ; double dy_uz = 0 ; double dz_uz = 0;
 /* conversion from axis angles to quaternions */
    
@@ -202,33 +197,32 @@ for(i=0; i < itr ; i++){
 
     /* Here compute v particle at time n+1/2 */
 
-     vx += (fx * (0.5*time_dt)) / mp;
-     vy += (fy * (0.5*time_dt)) / mp;
-     vz += (fz * (0.5*time_dt)) / mp;
+     v2x = vx + (fx * (0.5*time_dt)) / mp;
+     v2y = vy + (fy * (0.5*time_dt)) / mp;
+     v2z = vz + (fz * (0.5*time_dt)) / mp;
      
     /* Here compute v particle at time n */
 
       /* computation of the position */
-     x += ( vx * time_dt);
-     y += ( vy * time_dt);
-     z += ( vz * time_dt);
+     x += ( v2x * time_dt);
+     y += ( v2y * time_dt);
+     z += ( v2z * time_dt);
  
- /* computing force for time n+1/2 to compute the velocity at time n+1 and assuming the fluid velocity is constant at at this step */
-    fx = (matKT[0][0]*(ux - vx) +  matKT[0][1]*(uy - vy) +  matKT[0][2]*(uz - vz))*nu; 
-    fy = (matKT[1][0]*(ux - vx) +  matKT[1][1]*(uy - vy) +  matKT[1][2]*(uz - vz))*nu;
-    fz = (matKT[2][0]*(ux - vx) +  matKT[2][1]*(uy - vy) +  matKT[2][2]*(uz - vz))*nu; 
 
-/* computing the velocity at time n+1 */
-     vx += (fx * (0.5*time_dt)) / mp;
-     vy += (fy * (0.5*time_dt)) / mp;
-     vz += (fz * (0.5*time_dt)) / mp;
+/* computing the velocity at time n+1 using euler */
+     vx += (fx * (time_dt)) / mp;
+     vy += (fy * (time_dt)) / mp;
+     vz += (fz * (time_dt)) / mp;
      
      
     /* to find the value of v  by extrapolation at time n +1 for next iteration */ 
 //     vx = 0.5 * (v12x + 3* vx);
 //     vy = 0.5 * (v12y + 3* vy);
 //     vz = 0.5 * (v12z + 3* vz);   
-     printf("velocity =%e %e %e\n", vx, vy, vz);
+
+
+
+
      /* -------------------------------------------------------------------------*/
      /* orientation computation */
 
@@ -303,7 +297,12 @@ for(i=0; i < itr ; i++){
     /* I_xx = I_yy hence the equation is simplified */
     do_z = (T_z)/I_zz;
 
+    /* transformation: From angular momentum in the body frame to lab frame*/
+    dlo_x = matR[0][0] * do_x + matR[0][1] * do_y + matR[0][2] * do_z;
+    dlo_y = matR[1][0] * do_x + matR[1][1] * do_y + matR[1][2] * do_z;
+    dlo_z = matR[2][0] * do_x + matR[2][1] * do_y + matR[2][2] * do_z;
 
+    
     /* taking average to determine the middle value */
 /*
     o12x = 0.5*( ox_old + ox);
@@ -355,10 +354,13 @@ for(i=0; i < itr ; i++){
     q2 *= invq;
     q3 *= invq;
 
+    
+    
+    
     /* estimating the value of omega at time t+dt/2  */
-     ox += do_x *(time_dt*0.5);
-     oy += do_y *(time_dt*0.5);
-     oz += do_z *(time_dt*0.5);
+     ox += dlo_x *(time_dt*0.5);
+     oy += dlo_y *(time_dt*0.5);
+     oz += dlo_z *(time_dt*0.5);
 
 
      /* rotation matrix of quaternions */
@@ -406,13 +408,17 @@ for(i=0; i < itr ; i++){
 
     
     
+     /* estimating the value of omega at time t+dt using euler  */
+     ox += dlo_x *(time_dt);
+     oy += dlo_y *(time_dt);
+     oz += dlo_z *(time_dt);   
     
     
     /* extrapolation to predict the value of ox at time t+dt */
 
-     ox = 0.5 * (o12x + 3* ox);
-     oy = 0.5 * (o12y + 3* oy);
-     oz = 0.5 * (o12z + 3* oz);
+//     ox = 0.5 * (o12x + 3* ox);
+//     oy = 0.5 * (o12y + 3* oy);
+//     oz = 0.5 * (o12z + 3* oz);
 
 
 /* conversion from quaternions to axis angles */
